@@ -1,0 +1,12 @@
+\BOOKMARK [1][-]{section.1}{n-step predictions}{}% 1
+\BOOKMARK [1][-]{section.2}{The forward view}{}% 2
+\BOOKMARK [1][-]{section.3}{The backward view}{}% 3
+\BOOKMARK [1][-]{section.4}{Equivalence between the two formulation}{}% 4
+\BOOKMARK [1][-]{section.5}{Algorithms}{}% 5
+\BOOKMARK [2][-]{subsection.5.1}{Sarsa\(\)}{section.5}% 6
+\BOOKMARK [2][-]{subsection.5.2}{Watkins's Q\(\)}{section.5}% 7
+\BOOKMARK [2][-]{subsection.5.3}{Peng's Q\(\)}{section.5}% 8
+\BOOKMARK [1][-]{section.6}{Advanced topics}{}% 9
+\BOOKMARK [2][-]{subsection.6.1}{Replacing traces}{section.6}% 10
+\BOOKMARK [2][-]{subsection.6.2}{Variable }{section.6}% 11
+\BOOKMARK [1][-]{section.7}{Conclusion}{}% 12

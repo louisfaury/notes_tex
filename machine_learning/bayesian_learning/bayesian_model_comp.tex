@@ -1,0 +1,248 @@
+%!TEX encoding = IsoLatin
+
+%% Document is article 
+\documentclass[a4paper]{article}
+
+%% ----------------------------------------------------- PACKAGES ----------------------------------------------------- %%
+\usepackage{coolArticle}
+\usepackage{algorithm2e}
+
+\newcommand\bt{\boldsymbol{t}}
+\newcommand\bphi{\boldsymbol{\phi}}
+
+%% ---------------------------------------------------- DOCUMENT ---------------------------------------------------- %%
+\begin{document}
+
+	\titlebox{0.4}{Bayesian Machine Learning}{Bayesian Model Comparison}
+			
+	\vspace{10pt}
+	
+	\section{The Bayesian approach to model comparison}
+	{
+		\paragraph{} We wish to compare a set of $L$ \emph{models} (or probability distributions over the observed data), that we'll note $\{\mathcal{M}_i\}_{i\in\{1,\hdots, L\}}$. 
+		
+		\paragraph{} Given a training set $\mathcal{D}$ and a prior belief $p(\mathcal{M}_i)$, Baye's rule writes : 
+		\begin{equation}
+			\condp{\mathcal{M}_i}{\mathcal{D}} \propto \underbrace{\condp{\mathcal{D}}{\mathcal{M}_i}}_{\text{\textcolor{red}{model evidence}}}p(\mathcal{M}_i)
+		\end{equation}
+		We call the quantity $\condp{\mathcal{D}}{\mathcal{M}_i}$ the \emph{model evidence} (or marginal likelihood), which is a measure a the preference shown by the data for the model $\mathcal{M}_i$.
+		
+		\paragraph{} Also, one can note that once the posterior distributions of model $\condp{\mathcal{M}_i}{\mathcal{D}}$ are known, the predictive distribution for new inputs writes : 
+		\begin{equation}
+			\condp{t}{x,\mathcal{D}} = \sum_{i=1}^L \condp{t}{x,\mathcal{D},\mathcal{M}_i}\condp{\mathcal{M}_i}{\mathcal{D}}
+		\end{equation}
+		by marginalizing over the models. Using such a prediction employs the mixture of expert distributions, and is known as \emph{Bayesian model averaging}. We could also seek to pick the most appropriate model, procedure known as \emph{\textcolor{red}{model selection}}. 
+	}	
+	
+	\section{The Evidence}
+	{
+		\paragraph{} For a parametric model, the evidence writes : 
+		\begin{equation}
+			\condp{\mathcal{D}}{\mathcal{M}_i} = \int_w \condp{\mathcal{D}}{\mathcal{M}_i,w}\condp{w}{\mathcal{M}_i}dw
+		\end{equation}
+		From a sampling perspective, we are looking how well $\mathcal{D}$ could be generated when sampling from the prior distribution of the parameter. 
+		
+		\subsection{Intuition}
+		{
+			\paragraph{} In the following, we'll omit the model $\mathcal{M}_i$ to keep notations uncluttered. To gain some insight on the evidence, let us assume that the posterior distribution is sharply peaked around its maximum value ($w_{MAP}$) with width $\Delta w_{po}$. The prior is supposed to be flat around a $\Delta w_{pr}$ interval. Therefore the evidence approximates as : 
+			\begin{equation}
+				p(\mathcal{D}) = \condp{\mathcal{D}}{w_{MAP}}\frac{\Delta w_{po}}{\Delta w_{pr}}
+			\end{equation}
+			and a first approximation of the log evidence writes : 
+			\begin{equation}
+			 	\ln{p(\mathcal{D})} \simeq \ln{\condp{\mathcal{D}}{w_{MAP}}} + M\ln{\frac{\Delta w_{po}}{\Delta w_{pr}}}
+			\end{equation}
+			if we have $M$ parameters. This measure is starting to look like the BIC model selection criterion ! Hence the BIC can be related to evidence maximization for selecting a model. Indeed, the BIC simply adds a Gaussian approximation of the posterior to write in its full form. 
+		}
+		\subsection{Baye's factor}
+		{
+			\paragraph{} The ratio of two different model evidences $\condp{\mathcal{M}_i}{D}/\condp{\mathcal{M}_i}{D}$ is known as \emph{\textcolor{red}{Baye's factor}}. 
+			
+			\paragraph{} In the Bayesian model comparison framework, one assumes that the true model (i.e from which the data was generated) to be within the set of model under comparison. Provided this assumption, we'd like to show that the Bayesian approach averages models in favor of the true one. 
+			If we consider only $\mathcal{M}_1$ and $\mathcal{M}_2$, with the first being the true model. For a finite amount of data, it is possible for the Bayes factor to be largest for the wrong model. However, in the \emph{large data limit},  and if we average the Baye's factor over the distribution of datasets, we obtained that the expected Baye's factor writes (transposing to the log likelihoods) : 
+			\begin{equation}
+				\int_\mathcal{D} \condp{\mathcal{D}}{\mathcal{M}_1} \frac{\condp{\mathcal{D}}{\mathcal{M}_1}}{\condp{\mathcal{D}}{\mathcal{M}_2}} d\mathcal{D}
+			\end{equation}
+			Therefore, the expected Baye's factor writes simply as the \textcolor{red}{\emph{KL divergence}} of $p$ to $q$ ! Using Jensen's inequality, one can easily show that this divergence is positive, hence giving most credit to the true model $\mathcal{M}_1$. 
+			
+			\paragraph{} For reminders, $KL(p\vert \vert q)$ is a distance (more precisely a divergence) between two p.d.f. It writes : 
+		\vspace{5pt}
+		
+		\coolbox{white}{\textcolor{black}{KL divergence}}
+		{
+			\begin{equation}
+				\begin{aligned}
+					KL(p\vert\vert q) &= \E[p]{\ln\frac{p}{q}} \\
+							          &= \int_\theta p(\theta)\ln\frac{p(\theta)}{q(\theta)}d\theta
+				\end{aligned}
+			\end{equation}
+		}
+		}
+		
+		\subsection{Evidence approximation or ML2}
+		{
+			\paragraph{} In the following, we'll consider the design matrix 
+			$$
+				X = \begin{pmatrix} x_1^T \\ \vdots \\ x_n^T\end{pmatrix} \in\mathcal{M}_{n,d}(\mathbb{R})
+			$$
+			alongside the target vector $\boldsymbol{t} = \begin{pmatrix} t_1 & \hdots & t_n\end{pmatrix}^T$. 
+			
+			\paragraph{}Recall the Bayesian inference approach for linear regression : 
+			\begin{itemize}
+				\item likelihood : 
+					\begin{equation}
+						\condp{t}{x,w} = \normalDb{t}{w^T\phi(x)}{\beta^{-1}}
+						\label{eq::likelihood}
+					\end{equation}
+				\item prior : 
+					\begin{equation}
+						\condp{w}{\alpha} = \normalDb{w}{0}{\alpha^{-1}\mathds{I}}
+						\label{eq::prior}
+					\end{equation}
+			\end{itemize}
+			In a fully Bayesian approach, we should provide $\alpha$ and $\beta$ with prior distribution and make predictions by marginalizing over them. This however leads to intractable computations. Indeed, if we introduce hyperpriors for $\alpha$ and $\beta$, the predictive distribution would write : 
+			\begin{equation}
+				\condp{t}{\boldsymbol{t},x,X} = \iiint_{\alpha,\beta,w}\condp{t}{w,x,\beta}\condp{w}{\alpha,X,\boldsymbol{t}}\condp{\alpha,\beta}{\boldsymbol{t},X}\text{d}w\text{d}\alpha \text{d}\beta
+			\end{equation}
+
+			
+			\paragraph{} The most logical approximation to simplify this expression is to set hyper-parameters to values maximizing the marginal likelihood. This framework is known as \emph{empirical Bayes}, \emph{type-II maximum likelihood} or \emph{\textcolor{red}{the evidence approximation}}. \newline
+			If we now assume that $\condp{\alpha,\beta}{\boldsymbol{t},X}$ - which is the posterior distribution over the hyper-parameters - is sharply peaked around $\hat{\alpha}, \hat{\beta}$ (maximal values), the predictive distribution will now write : 
+			\begin{equation}
+				\condp{t}{\boldsymbol{t},x,X} = \int_w \condp{t}{w,\hat{\beta}}\condp{w}{\boldsymbol{t},\hat{\alpha}}dw
+			\end{equation}
+			Since according to Baye's rule : 
+			$$
+				\condp{\alpha,\beta}{\boldsymbol{t}} \propto p(\alpha,\beta)\condp{\mathbf{t}}{\alpha,\beta}
+			$$
+			if we assume a flat prior $p(\alpha,\beta)$, we therefore define : 
+			\begin{equation}
+				(\hat{\alpha},\hat{\beta}) = \argmax{\alpha,\beta}{\condp{\boldsymbol{t}}{\alpha,\beta}}
+			\end{equation}
+			In the end, we choose to assign the hyper-parameters to the values that \textbf{maximize the evidence}. 
+			
+			\paragraph{} Let's evaluate the model evidence for the linear model. We have that : 
+			\begin{equation}
+				\condp{\boldsymbol{t}}{\alpha, \beta} = \int_w \condp{\boldsymbol{t}}{w,\beta}\condp{w}{a}dw
+			\end{equation}
+			Using \eqref{eq::likelihood} and \eqref{eq::prior} we have that : 
+			\begin{equation}
+				\condp{\boldsymbol{t}}{\alpha, \beta} = \left(\frac{\beta}{2\pi}\right)^{n/2} \left(\frac{\alpha}{2\pi}\right)^{d/2} \int_w \exp(-E(w))dw 
+			\end{equation}
+			where we have that 
+			\begin{equation}
+				\begin{aligned}
+					E(w) &= \frac{\beta}{2}\lVert \bt - \bphi w\rVert^2 + \frac{\alpha}{2}w^Tw\\
+						&=  \frac{\beta}{2} \bt^T\bt +\frac{1}{2}w^T\left(\alpha+\beta\bphi^T\bphi\right)w + \beta^{-1}\bt^T\bphi w
+				\end{aligned}
+			\end{equation}
+			Let us write : 
+			\begin{equation}
+			\left\{
+				\begin{aligned}
+					\Sigma^{-1} &= \alpha\mathds{I}_d + \beta\bphi^T\bphi \\
+					\mu &= \beta\Sigma\bphi^T\bt
+				\end{aligned}\right.
+			\end{equation}
+			Then : 
+			\begin{equation}
+				\begin{aligned}
+					E(w) &= \frac{1}{2}(w-\mu)^T\Sigma^{-1}(w-\mu)  +  \frac{\beta}{2} \bt^T\bt - \frac{1}{2}\mu^T\Sigma^{-1}\mu \\
+						&= E(\mu) + \frac{1}{2}(w-\mu)^T\Sigma^{-1}(w-\mu) 
+				\end{aligned}
+			\end{equation}
+			where we defined : 
+			\begin{equation}
+				E(\mu) =  \frac{\beta}{2} \lVert \bt - \bphi\mu\rVert ^2 + \frac{\alpha}{2}m_N^Tm_N
+			\end{equation}
+			In the end, we obtain for the full expression of the evidence : 
+			\vspace{5pt}
+			
+			\coolbox{white}{\textcolor{red}{Evidence (linear model)}}
+			{
+				\begin{equation}
+					\ln{\condp{\bt}{\alpha,\beta}} = \frac{n}{2}\ln\beta + \frac{d}{2}\ln\alpha - E(\mu) - \frac{1}{2}\ln{\vert \Sigma^{-1}\vert} - \frac{n}{2}\ln2\pi
+				\end{equation}
+			}
+						\paragraph{} Let's maximize the evidence with respect to $\alpha$. We'll write $\{u_i\}_i\in\mathbb{R}^d$ the eigen values of $\beta \bphi^T\bphi $ : 
+				\begin{equation}
+					\beta \bphi^T\bphi u_i = \lambda_i u_i,\quad \forall i\in\{1,\hdots,d\}
+				\end{equation}
+				Therefore, the precision matrix $A = \Sigma^{-1}$ has eigen values $(\alpha + \lambda_i)_i$. Since 
+				$$
+					\ln{\vert A\vert } = \sum_{i=1}^d \ln{(\alpha+\lambda_i)}
+				$$
+				we'll have that 
+				\begin{equation}
+					\frac{\text{d}}{\text{d}\alpha} \ln{\vert A \vert} = \sum_{i=1}^d \frac{1}{\alpha + \lambda_i}
+				\end{equation}
+				Therefore the stationary points of the evidence function satisfy : 
+				\begin{equation}
+					\begin{aligned}
+						&\frac{\text{d}}{\text{d}\alpha}\condp{\bt}{\alpha,\beta} & = 0 &  &   \\
+						& &  \Leftrightarrow & & \frac{d}{2\alpha} - \frac{1}{2}\mu^T\mu - \frac{1}{2}\sum_{i=1}^d \frac{1}{\lambda_i + \alpha}=0
+					\end{aligned}
+				\end{equation}
+				Therefore we have : 
+				\begin{equation}
+					\begin{aligned}
+						\alpha \mu^T\mu &= d - \sum_{i=1}^d \frac{\alpha}{\lambda_i + \alpha}\\
+									   &= \sum_{i=1}^d \frac{\lambda_i}{\lambda_i+\alpha} \\
+									   &= \gamma
+					\end{aligned}
+				\end{equation}
+				which we'll sum um in the \emph{implicit} equation : 				
+				\boxedeq{red}
+				{
+					\alpha = \frac{\gamma}{\mu^T\mu}
+				}
+				This equation is of course not solvable in place (both $\mu$ and $\gamma$ are functions of $\alpha$). It however leads to a iterative solving of the evidence maximization (EM like algorithm). The same reasoning can be held for the determination of $\beta$. 
+		}
+		\subsubsection{Effective number of parameters}
+		{
+			\paragraph{} In directions where $\lambda_i >> \alpha$, the parameter $w_i$ will be close to its maximal likelihood value. It is said to be \emph{well-determined} (i.e tightly constrained by the data). Conversely, in directions for which $\lambda_i << \alpha$, we'll have that the likelihood would be relatively insensitive to $\alpha$. 
+			
+			\paragraph{} Actually, 
+			$$
+				\gamma = \sum_{i=1}^d \frac{\lambda_i}{\alpha + \lambda_i}
+			$$
+			is a measure of the effective total number of well determined parameters. If we now consider the large data limit ($n>>d$), it is likely that all the parameters will be determined by the data as : 
+			$$
+				\bphi^T\bphi = \sum_i \phi_i \phi_i^T
+			$$
+			which is a sum of rank one matrixes. 
+		}
+	}
+	\section{Model comparison and BIC}
+	{
+			\paragraph{} Consider the Laplace approximation for incomputable posteriors : we wish to have an approximation of the normalizing constant $Z$. We will approximate the posterior by a Gaussian centered around its maximum-a-posteriori value. 
+			\begin{equation}
+				\begin{aligned}
+					Z &= \int_z f(z)dz \\
+				 	   &\simeq f(z_0)\int_z \exp{\left(-\frac{1}{2}(z-z_0)^TA(z-z_0)\right)}dz\\
+					   &\simeq f(z_0)\frac{(2\pi)^{d/2}}{\vert A\vert^{1/2}}
+				\end{aligned}
+			\end{equation}
+			
+			\paragraph{} Now if we consider a dataset $\mathcal{D}$ with a set of models $\{\mathcal{M}_i\}_i$ having parameters $\{\theta_i\}$. Each model evidence writes : 
+			\begin{equation}
+				\condp{D}{\mathcal{M}_i} = \int_{\theta_i} \condp{D}{\theta_i,\mathcal{M}_i}\condp{\theta_i}{\mathcal{M}_i}d\theta_i
+			\end{equation}
+			If we take its Laplace approximation we obtain (omitting the model reference for keeping uncluttered notations) : 
+			\begin{equation}
+				\ln p(\mathcal{D}) = \ln \condp{\mathcal{D}}{\theta_{MAP}} +\underbrace{\ln p(\theta_{MAP}) + \frac{M}{2}\ln 2\pi- \frac{1}{2}\ln\vert A\vert}_{\text{\textcolor{red}{Occam's factor}}} 
+				\label{eq::laplace_lk}
+			\end{equation}
+			where we took 
+			\begin{equation}
+				A = -\nabla \nabla \ln\condp{\mathcal{D}}{\theta_{MAP}}p(\theta_{MAP})
+			\end{equation}
+			
+			\paragraph{} The equation \eqref{eq::laplace_lk} is often roughly approximated by considering a flat prior and a full-rank Hessian. This gives rise to the \textbf{\textcolor{red}{Bayesian Information Criterion}} : 
+			\begin{equation}
+				\ln p(\mathcal{D}) \simeq \ln\condp{\mathcal{D}}{\theta_{MAP}} - \frac{1}{2}M\ln N
+			\end{equation}
+			which is often used when it comes to easily comparing models, based on their performance (likelihood) and their complexity (Occam's factor). 
+	}
+	
+\end{document}

@@ -1,0 +1,342 @@
+%!TEX encoding = IsoLatin
+
+%% Document is article 
+\documentclass[a4paper]{article}
+
+%% ----------------------------------------------------- PACKAGES ----------------------------------------------------- %%
+\usepackage{coolArticle}
+\usepackage{algorithm2e}
+
+%% --------------------------------------------------- COMMANDS ----------------------------------------------------- %%
+\newcommand\mS{\mathcal{S}}
+\newcommand\mA{\mathcal{A}}
+\newcommand\tdl{TD($\lambda$)}
+\newcommand\srsl{Sarsa($\lambda$)}
+\newcommand\wtkl{Watkin's Q($\lambda$)}
+\newcommand\pql{Peng's Q($\lambda$)}
+
+%% ---------------------------------------------------- DOCUMENT ---------------------------------------------------- %%
+\begin{document}
+
+	\titlebox{0.4}{Reinforcement Learning}{Eligibility Traces - A unified view}
+	
+		
+	\vhrulefill{2pt}
+	
+	\tableofcontents
+	
+	\vhrulefill{2pt}
+	
+	
+	\paragraph{} There are two ways to consider eligibility traces in reinforcement learning : 
+	\begin{itemize}
+		\item The theoretical approach (or \textcolor{red}{\emph{forward view}}) emphasizes the bridge that can be built between TD(0) and Monte-Carlo methods. Indeed, as we'll see, when TD methods are augmented with eligibility traces, they produce a family of methods spanning a spectrum that has MC methods at one hand and TD(0) at the other. 
+		\item The practical approach (or \emph{\textcolor{red}{backward view}}) provide a more mechanistic view of the same principle. From this perspective, eligibility traces are a temporary recording of an event (such as the visit of a state-action couple). 
+	\end{itemize}
+	After justifying the intuition for the forward view, we'll detail both methods before proving their theoretical equivalence (under certain conditions). 
+	
+	\section{$n$-step predictions}
+	{
+		\paragraph{} Consider the task of estimating $V^{\pi}(\cdot)$ from episodes sampled from $\pi$. In MC methods, we would perform a back-up for each sampled state based on the entire reward sequence (from the state to the end of the episode). On the other hand, for TD($0$) methods, the update is only based on the next reward (and the current estimation of a following state-action couple as a proxy). 
+		
+		\paragraph{} It would appear that these methods each describe one end of a more intermediate approach, with backups based on an intermediate number of rewards. More formally, consider the back-up applied to state $s_t$ as a result of the state-reward sequence :
+		$$
+			s_t, \,r_{t+1},\,\hdots, \,r_T,\, s_T
+		$$
+		In a MC way, the estimate $V_t(s_t)$ of $V^\pi(s_t)$ is updated in the direction of the \emph{complete return} : 
+		\begin{equation}
+			R_t = r_{t+1} + \gamma r_{t+2} +\hdots + \gamma^{T-t-1} r_{T}
+		\end{equation}
+		which would be the target of the back-up. On the other hand, the target of the TD(0) algorithm will be the 1-step return : 
+		\begin{equation}
+			R_t^{(1)} = r_{t+1} + \gamma V_t(s_{t+1})
+		\end{equation}
+		Equivalently, the \textcolor{red}{$n$-step target} will write : 
+		\begin{equation}
+			R_t^{(n)} = \sum_{i=0}^{n-1}\{\gamma^i r_{t+i+1}\} + \gamma^n V_t(s_{t+n})
+		\end{equation}
+		
+		\noindent A $n$-step backup is defined to be a back-up toward the $n$-step return. In the tabular case, it writes : 
+		\begin{equation}
+			\Delta V_t(s_t) = \alpha\left[ R_{t}^{(n)} - V_t(s_t)\right] \quad \alpha>0
+		\end{equation}
+		Such a back-up comply with the \emph{\textcolor{red}{error reduction property}} : 
+		\vspace{5pt}
+		
+		\coolbox{white}{\textcolor{black}{Error Reduction Property}}
+		{
+			\begin{equation}
+				\forall V(\cdot), \quad \max_{s\in\mathcal{S}}\left\vert \E[\pi]{R_t^{(n)}\vert s_t =s }- V^\pi(s)\right\vert < \gamma^n \max_{s\in\mathcal{S}} \left\vert V(s) -V^\pi(s)\right\vert 
+				\label{eq::err_red}
+			\end{equation}
+		}
+		\vspace{5pt}
+		
+		\noindent This namely implies that the expected return of size $n$ under $V(\cdot)$ is a better approximation of $V_\pi(\cdot)$ than $V(\cdot)$ itself ! Under appropriate conditions, this results is used to proved that the $n$-step backups converge to correct predictions. 
+		
+		\paragraph{} It is important to understand that this kind of updates are never used in practice, since we'd have to wait $n$-steps (and therefore keep them in memory) before performing any kind of backup ! This becomes problematic for large $n$, and even so for smaller $n$ when it comes to control tasks. 
+	}	
+	\section{The forward view}
+	{
+		\paragraph{} Back-ups can be done not just toward any $n$-step return, but towards \emph{any average of them} ! For instance : 
+		$$
+			R_t^a = \frac{1}{2}R_t^{(1)} + \frac{1}{2}R_t^{(2)}
+		$$
+		This conserves the error reduction property, and is known as a \emph{\textcolor{red}{complex backup}}. The \tdl{} algorithm can be understood as a particular way of averaging $n$-step backups. This average will contain all the $n$-step returns, each of them being weighted proportionally to $\lambda^{n-1}$, with $\lambda\in(0,1)$. (along with a normalizing factor). The return is known as the \textcolor{red}{$\lambda$-return} and writes : 
+		\begin{equation}
+			R_t^{(\lambda)} = (1-\lambda) \sum_{n=1}^\infty \lambda^n R_t^{(n	)}
+		\end{equation}
+		
+		\begin{leftbar}
+				\noindent \sffamily 
+				\textbf{Remark} : For an episodic MDP, we'll can write : 
+				\begin{equation}
+					\begin{aligned}
+						R_t^{(\lambda)} &= (1-\lambda) \sum_{n=1}^{T-t-1} \lambda^{n-1}R_t^{(n)} + \sum_{T-t}^\infty (1-\lambda)\lambda^nR_t{(n)} \\
+									&= (1-\lambda) \sum_{n=1}^{T-t-1} \lambda^{n-1}R_t^{(n)} + \lambda^{T-t-1} R_T
+					\end{aligned}
+				\end{equation}	
+				For $\lambda=1$, we clearly have that $R_t^{(1)} = R_T$ : this is the constant-$\alpha$ Monte-Carlo method !! 
+		\end{leftbar}
+		
+		\paragraph{} The $\lambda$-return algorithm performs updates towards the $\lambda$-target : 
+		\begin{equation}
+			\Delta V_t(s_t) = \alpha\left[ R_t^{(\lambda)} - V_t(s_t)\right]
+		\end{equation}
+		and defines the \textcolor{red}{\textbf{forward view}} of TD($\lambda$). 
+	}
+	\section{The backward view}
+	{
+		\paragraph{} The forward view is anti-causal, since at each step we are using information generated by future ones. We describe hereinafter the backward view of \tdl{}, providing an incremental mechanism for approximating the forward view. We add to every state an additional memory variable called its eligibility trace, noted $e_t(s)\in\mathbb{R}^+, \, \forall s\in\mS$. 
+		
+		\paragraph{} On each step, the eligibility traces for all state decay by a factor $\gamma \lambda$, and the eligibility trace for the current step is incremented by 1 : 
+		\boxedeq{red}
+		{
+			\forall s \in\mS, \quad e_t(s) = 
+				\left\{\begin{aligned}
+					&\gamma \lambda \cdot e_t(s) & &\quad \text{if } s = s_t \\
+					& \gamma \lambda \cdot e_t(s) +1 & & \quad\text{otherwise} 
+				\end{aligned}\right.
+		}
+		\noindent This kind of trace is known as an \emph{accumulating trace}. Traces indicate which state is eligible for undergoing learning changes, and to which extent. 
+		
+		\paragraph{} At a state $s_t$, the TD(0) error for state-value prediction is : 
+		$$
+			\delta_t = r_{t+1} + \gamma V_t(s_{t+1}) - V_t(s_t)
+		$$
+		which computation triggers a proportional update to the recently visited states : 
+		\begin{equation}
+			\Delta V_t(s) = \alpha \delta_te_t(s), \quad \forall s \in \mS
+		\end{equation}
+		which can either be applied online or offline. The backward view of \tdl{} is therefore backward orientated in time. At each moment, we look at the TD error and assign it backward to each prior state, according to the previously visited states. 
+		
+		\paragraph{} As before, $\lambda = 0$ gives rise to the simple TD rule, and $\lambda=1$ to an online MC version for \tdl. However, this MC method can be used online and for discounted continuing task, increasing the range of applicability for MC-like algorithms. 
+	}
+	\section{Equivalence between the two formulation}
+	{
+		\paragraph{} We wish to prove that the off-line \tdl, as defined in the section above, achieves the same weight updates as the offline $\lambda$-return algorithm. We'll let : 
+		\begin{itemize}
+			\item $\Delta V_t^{\lambda}(s_t)$ be the update of $V(s_t)$ according to the $\lambda$-return algorithm. 
+			\item $\Delta V_t^{TD}(s)$ its equivalent for the \tdl{} algorithm. 
+		\end{itemize}
+		Our goal is to show that all the updates over one episode is the same for the two algorithm, ie : 
+		\begin{equation}
+			\sum_{t=0}^{T-1}\Delta V_t^{TD}(s) = \sum_{t=0}^{T-1} \Delta V_t^\lambda(s)\mathds{1}_{ss_t}, \quad \forall s \in\mS
+			\label{eq::equi}
+		\end{equation}
+		
+		\paragraph{} Recall that we can write an eligibility traces as $\forall s \in \mS$ :  
+		\begin{equation}
+			e_t(s) = \sum_{k=0}^t (\gamma \lambda)^{t-k}\mathds{1}_{ss_k}
+		\end{equation}
+		Therefore : 
+		\begin{equation}
+			\begin{aligned}
+				\sum_{t=0}^{T-1}\Delta V_t^{TD}(s) &= \sum_{t=0}^{T-1} \alpha \delta_t e_t(s) \\
+										      &= \sum_{t=0}^{T-1} \alpha \delta_t \left\{ \sum_{k=0}^t (\gamma \lambda)^{t-k}\mathds{1}_{ss_k}\right\}\\
+										      &= \sum_{k=0}^{T-1} \alpha \mathds{1}_{ss_k} \sum_{t=k}^{T-1} (\gamma \lambda)^{t-k}\delta_t
+			\end{aligned}
+		\end{equation}
+		We now focus on the left-hand side of \eqref{eq::equi}. Since we have : 
+		$$
+			\begin{aligned}
+				\frac{1}{\alpha}\Delta V_t^\lambda(s_t) &= (R_t^\lambda - V_t(s_t))    \\
+										&\begin{aligned}
+											&= -V_t(s_t) && \\
+											& &&+(1-\lambda)(r_{t+1}+\gamma V_t(s_{t+1}))  \\ 
+											& &&+(1-\lambda)\lambda(r_{t+1} + \gamma r_{t+2} + \gamma^2 V_t(s_{t+2})) \\
+										 	& &&+\hdots  \\
+										\end{aligned}\\
+										&\begin{aligned}
+											&= -V_t(s_t) && \\
+											& &&+ (1-\lambda)\left(\sum_{k=0}^\infty \lambda^k\right)r_{t+1} + (1-\lambda)\gamma V_t(s_{t+1})\\
+											& &&+ \hdots 
+										\end{aligned}\\
+										&\begin{aligned}
+											&= -V_t(s_t) && \\
+											& &&+ (r_{t+1}+ \gamma V_t(s_{t+1}) - \lambda\gamma V_t(s_{t+1})) \\
+											& &&+ \hdots 
+										\end{aligned}\\
+										&\begin{aligned}
+											&= &&(\gamma \lambda)^0(r_{t+1} + \gamma V_t(s_{t+1}) - V_t(s_t)) \\ 
+											&&+ &(\gamma\lambda)^1(r_{t+2} + \gamma V_t(s_{t+2}) - V_t(s_{t+1})) \\
+											&&+ &\hdots 
+										\end{aligned}
+			\end{aligned}
+		$$
+		Therefore in the hand : 
+		\begin{equation}
+			\begin{aligned}
+			&\frac{1}{\alpha}\Delta V_t^\lambda(s_t) &= \sum_{k=t}^\infty (\gamma\lambda)^{k-t} \delta_k \\
+							& = \sum_{k=t}^T (\gamma\lambda)^{k-t} \delta_k
+			\end{aligned}
+		\end{equation}
+		Therefore 
+		\begin{equation}
+			\sum_{t=0}^{T-1} \Delta V_t^\lambda(s_t)\mathds{1}_{ss_t} = \sum_{t=0}^{T-1}\alpha \mathds{1}_{ss_t} \sum_{k=t}^{T-1} (\gamma \lambda)^{k-t}\delta_k = \sum_{t=0}^{T-1} \Delta V_t^{TD}(s) 
+		\end{equation}
+		hence proving \eqref{eq::equi} and the equivalence of the backward and forward view for off-line learning. This result stills holds for on-line learning if $\alpha << 1$ (and therefore we can assume the state value function $V_t(\cdot)$ to stay constant along an episode). More generally, we can expect for \tdl{} and eligibility traces to be similar. 
+		
+	}
+	\section{Algorithms}
+	{
+		\subsection{Sarsa($\lambda$)}
+		{
+			\paragraph{} We wish to use eligibility traces for other task than evaluation - like control. As usual, we will focus on learning $Q_t(s,a)$. We'll need a trace for each (state $\times$ action) couple. We'll just have to generalize the \tdl{} approach for the action-value function. The recursion for the eligibility traces are : 
+			\begin{equation}
+				e_t(s,a) = \left\{
+					\begin{aligned}
+						&\gamma \lambda e_{t-1}(s,a) +1 \quad &\text{if }\, s=s_t, \, a = a_t \\
+						& \gamma \lambda e_{t-1}(s,a) &\text{otherwise}
+					\end{aligned}\right.
+			\end{equation}
+			and the update will write : 
+			\begin{equation}
+				Q_{t+1}(s,a) = Q_t(s,a) + \alpha \delta_t e_t(s,a) \quad \forall(s,a)\in\mS\times\mA
+			\end{equation}
+			with : 
+			\begin{equation}
+				\delta_t = r_t + \gamma Q_t(s_{t+1},a_{t+1}) - Q_t(s_t,a_t)
+			\end{equation}
+			
+			\paragraph{} \srsl{} is still an \emph{on-policy} algorithm - we'll evaluate a tabular version of $Q(\cdot,\cdot)$ while following $\pi$. Control is performed by $\eps$-greedy of Gibbs sampling, like in TD(0). 
+			\vspace{10pt}
+			
+			\coolbox{white}{\textcolor{blue}{\srsl}}
+				{
+					\begin{algorithm}[H]
+	 				\SetAlgoLined
+					\LinesNumbered
+					 \textsf{\emph{1. Initialize $\{Q(s,a)\}_{(s,a)\in\mS\times\mA}$ }} \\
+					\textsf{\emph{2. Repeat}} (each episode) \\
+					\Indp \Indp a) Initialize $(s,a)\in\mS\times\mA$ \\
+						  	  b) Take $a$, observe $s,r$ \\
+							  c) Select $a'$ from a soft policy derived from $Q(\cdot,\cdot)$\\
+							  \Indp \Indp 
+							  	$\delta_t =  r+ \gamma Q_t(s',a') - Q_t(s,a)$ \\
+								$Q_{t+1}(s,a) = Q_t(s,a) + \alpha \delta_t e_t(s,a) \quad \forall(s,a)\in\mS\times\mA$\\
+								$ e(s,a) \leftarrow 1 + e(s,a)$	\\
+								$ e(s,a) \leftarrow \gamma \lambda \cdot e(s,a)	$\\
+
+							\Indm \Indm 
+							d) $s'\leftarrow s$, $a'\leftarrow a$
+				\end{algorithm}
+				}
+
+		}
+		\subsection{Watkins's Q($\lambda$)}
+		{
+			\paragraph{} For adapting eligibility traces to off-line methods like Q-learning, a somehow more thorough reflection needs to be conducted. Suppose we are backing up from $(s_t,a_t)$. The agent select the greedy action during the next two steps, but on the third it follows an exploratory action (non-greedy). Here, we can not use more than a 3-step return ! 
+			
+			\paragraph{} Unlike \srsl{},  \wtkl{} does not look ahead all the wat to the end of the episode to backup, but only until the next exploratory actions. Aside from this, \wtkl{} is extremely close to \tdl{}. If $(a_{t+n})$ is the first exploratory action, then the longest backup is toward : 
+			\begin{equation}
+				r_{t+1} + \gamma r_{t+2} + \hdots + \gamma^{n-1} r_{t+n} + \gamma ^n \max_{a\in\mA(s_{t+n})} Q(s_{t+n},a)
+			\end{equation}
+			Therefore, the backward view for \wtkl{} is also very simple : the trace's update will write : 
+			\begin{equation}
+				e_t(s,a) = \mathds{1}_{ss_t}\mathds{1}_{aa_t} + 
+					\left\{
+					\begin{aligned}
+						&\gamma \lambda e_{t-1}(s,a) &&\text{ if }\,  Q_{t-1}(s_t,a_t) = \max_{a\in\mA(s_t)}(Q_{t-1}(s_t,a_t) \\
+						& 0 &&\text{otherwise}
+					\end{aligned}
+					\right. 
+					\label{eq::wtkl_trace_update}
+			\end{equation}
+			First, all traces are decayed by $\gamma \lambda$ or brought back to $0$. Then we increment by 1 the current state$\times$action couple. 
+			We can then apply the update rule : 
+			\begin{equation}
+				Q_{t+1}(s,a) = Q_t(s,a) + \alpha \delta_t e_t(s,a) \quad \forall(s,a)\in\mS\times\mA
+			\end{equation}
+			with 
+			\begin{equation}
+				\delta_t = r_t + \gamma \max_{a\in\mA(s_{t+1})}Q(s_{t+1},a) - Q_t(s_t,a_t)
+			\end{equation}
+			\vspace{10pt}
+			
+			\coolbox{white}{\textcolor{blue}{\wtkl}}
+				{
+					\begin{algorithm}[H]
+	 				\SetAlgoLined
+					\LinesNumbered
+					 \textsf{\emph{1. Initialize $\{Q(s,a)\}_{(s,a)\in\mS\times\mA}$ }} \\
+					\textsf{\emph{2. Repeat}} (each episode) \\
+					\Indp \Indp a) Initialize $(s,a)\in\mS\times\mA$ \\
+						  	  b) Take $a$, observe $s,r$ \\
+							  c) Select $a'$ from a soft policy derived from $Q(\cdot,\cdot)$\\
+							  \Indp \Indp 
+							  	$\delta_t = r_t + \gamma \max_{a\in\mA(s_{t+1})}Q(s_{t+1},a) - Q_t(s_t,a_t)$ \\
+								$Q_{t+1}(s,a) = Q_t(s,a) + \alpha \delta_t e_t(s,a) \quad \forall(s,a)\in\mS\times\mA$\\
+								$ e(s,a) \leftarrow$ \eqref{eq::wtkl_trace_update}
+
+							\Indm \Indm 
+							d) $s'\leftarrow s$, $a'\leftarrow a$
+				\end{algorithm}
+				}
+				
+			\paragraph{} Unfortunately, cutting off traces every time a non-greedy action is selected is drying many of the advantages of using eligibility traces. There will indeed rarely be backups of more than one or two steps. 
+		}
+		\subsection{\pql}
+		{
+			\paragraph{} \pql{} is an alternate version of $Q(\lambda)$ aimed to remedy to the few long back-ups performed by \wtkl. It can be thought as an hybrid between \srsl{} and \wtkl. Conceptually, it uses a mixture of back-ups without distinctions between greedy and exploratory actions. Each component back-up s over many step of actual experience, and all but the last are capped by a final minimization over actions. Therefore, they are never on or off policy : the earlier transitions are on policy, where the last one uses the greedy policy. 
+			
+			\paragraph{} If there exist no proof of convergence for \pql, it often shows better practical performances that \wtkl.  
+		}
+	}
+	\section{Advanced topics}
+	{
+		\subsection{Replacing traces}
+		{
+			\paragraph{} In some cases, significantly better performances can be reached by using a slightly modified king of trace known as replacing trace. It operates as follows : 
+			\begin{equation}
+				e_t(s) = 
+					\left\{\begin{aligned}
+						&1 &&\text{ if } \, s=s_t \\
+						& \lambda \gamma e_{t-1}(s) &&\text{ otherwise}
+					\end{aligned}\right. \qquad \forall s\in\mS
+			\end{equation}
+			meaning that the trace of the currently visited state is lifted up to $1$ instead of being incremented by 1. In the un-discounted case, this approach identifies to the MC first-visit algorithm. 
+		}
+		\subsection{Variable $\lambda$}
+		{
+			\paragraph{} We could generalize our previous approach to more general $\lambda$, by allowing it to vary from one step to another. For evaluation purposes, we could use the following trace update : 
+			\begin{equation}
+				e_{t}(s) = \left\{\begin{aligned}
+						& \lambda_t \gamma e_{t-1}(s)  + 1 &&\text{ if } \, s=s_t \\
+						& \lambda_t \gamma e_{t-1}(s) &&\text{ otherwise}
+					\end{aligned}\right. \qquad \forall s\in\mS
+			\end{equation}
+			Intuitively, the idea is to vary $\lambda_t$ to be a function of the state (or more precisely of the confidence in the state's value estimation. 
+			\begin{itemize}[label = $\color{red}\boldsymbol{\rightarrow}$]
+				\item If the state has been visited many times, and the state-value function is supposed to be well-known at this state, we might want to use it fully. We'll switch $\lambda$ to be near $0$, therefore re-setting all traces to 0 after the update. 
+				\item Similarly, states whose value estimates are highly uncertain will be given $\lambda$ values near 1. Their TD update will therefore have little effect (they will be skipped until a high-confidence state is reached again). 
+			\end{itemize}
+		}
+	}
+	\section{Conclusion}
+	{
+		\paragraph{} Eligibility traces in conjunction with TD error provide an efficient, incremental way of shifting and choosing between MC and TD methods. The question of the choice of $\lambda$ can be tricky, and has no theoretical answer. It indeed greatly depends on the nature of the policy being learned (reward sparsity, episode length, ..). Although, choosing for a good compromise ($\lambda\simeq 0.75$) between TD and MC usually leads to a well-behaved learning. 
+	}
+	
+	
+\end{document}

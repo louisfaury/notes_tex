@@ -1,0 +1,31 @@
+\select@language {english}
+\contentsline {section}{\numberline {1}Vocubalary and notations}{1}{section.1}
+\contentsline {paragraph}{}{1}{section*.2}
+\contentsline {paragraph}{}{1}{section*.3}
+\contentsline {paragraph}{}{1}{section*.4}
+\contentsline {paragraph}{}{1}{section*.5}
+\contentsline {paragraph}{}{1}{section*.6}
+\contentsline {section}{\numberline {2}Markov Decision Process}{2}{section.2}
+\contentsline {subsection}{\numberline {2.1}The Markov property}{2}{subsection.2.1}
+\contentsline {paragraph}{}{2}{section*.7}
+\contentsline {paragraph}{}{2}{section*.8}
+\contentsline {paragraph}{}{2}{section*.9}
+\contentsline {subsection}{\numberline {2.2}Reinforcement Learning under the Markov assumption}{2}{subsection.2.2}
+\contentsline {paragraph}{}{2}{section*.10}
+\contentsline {subsubsection}{\numberline {2.2.1}The state value function}{2}{subsubsection.2.2.1}
+\contentsline {paragraph}{}{2}{section*.11}
+\contentsline {paragraph}{}{2}{section*.12}
+\contentsline {paragraph}{}{2}{section*.13}
+\contentsline {subsubsection}{\numberline {2.2.2}The action value function}{3}{subsubsection.2.2.2}
+\contentsline {paragraph}{}{3}{section*.14}
+\contentsline {subsection}{\numberline {2.3}Bellman equations for MDP}{3}{subsection.2.3}
+\contentsline {paragraph}{}{3}{section*.15}
+\contentsline {paragraph}{}{3}{section*.16}
+\contentsline {paragraph}{}{3}{section*.17}
+\contentsline {subsubsection}{\numberline {2.3.1}Optimal value functions}{3}{subsubsection.2.3.1}
+\contentsline {paragraph}{}{3}{section*.18}
+\contentsline {paragraph}{}{3}{section*.19}
+\contentsline {paragraph}{}{4}{section*.20}
+\contentsline {paragraph}{}{4}{section*.21}
+\contentsline {paragraph}{}{4}{section*.22}
+\contentsline {section}{\numberline {3}Quick summary}{4}{section.3}

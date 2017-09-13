@@ -1,0 +1,9 @@
+\BOOKMARK [1][-]{section.1}{Vocubalary and notations}{}% 1
+\BOOKMARK [1][-]{section.2}{Markov Decision Process}{}% 2
+\BOOKMARK [2][-]{subsection.2.1}{The Markov property}{section.2}% 3
+\BOOKMARK [2][-]{subsection.2.2}{Reinforcement Learning under the Markov assumption}{section.2}% 4
+\BOOKMARK [3][-]{subsubsection.2.2.1}{The state value function}{subsection.2.2}% 5
+\BOOKMARK [3][-]{subsubsection.2.2.2}{The action value function}{subsection.2.2}% 6
+\BOOKMARK [2][-]{subsection.2.3}{Bellman equations for MDP}{section.2}% 7
+\BOOKMARK [3][-]{subsubsection.2.3.1}{Optimal value functions}{subsection.2.3}% 8
+\BOOKMARK [1][-]{section.3}{Quick summary}{}% 9

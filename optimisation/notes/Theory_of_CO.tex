@@ -1,0 +1,396 @@
+%!TEX encoding = IsoLatin
+
+%% Document is article 
+\documentclass[a4paper]{article}
+
+%% ----------------------------------------------------- PACKAGES ----------------------------------------------------- %%
+\usepackage{coolArticle}
+\usepackage{algorithm2e}
+
+
+%% ---------------------------------------------------- DOCUMENT ---------------------------------------------------- %%
+\begin{document}
+
+	\titlebox{0.4}{Constrained Optimization}{Theory of Constrained Optimization}
+	
+		
+	\vhrulefill{2pt}
+	
+	\tableofcontents
+	
+	\vhrulefill{2pt}
+
+	\section{Vocabulary and notations}
+	{
+		\paragraph{} We consider the general formulation of a constrained optimization problem that is : 
+		\begin{equation}
+			\label{eq::constrained_optim_general}
+			\min_{x\in\mathbb{R}^n} f(x)  \quad \text{ subject to } : 
+				\left\{ \begin{aligned} 
+						&c_i(x) = 0 \quad &i\in\mathcal{E} \\
+						&c_i(x) \geq 0 \quad &i\in\mathcal{I}
+					\end{aligned}\right.
+		\end{equation}
+		where $f$ and the $(c_i)_{i\in\mathcal{E}\cup\mathcal{I}}$ are smooth, real-valued function on a subset of $\mathbb{R}^n$, and $\mathcal{E}$ and $\mathcal{I}$ are two finit sets of indices. We'll use the following denotation : 
+		\begin{equation}
+			\left\{ \begin{aligned}
+				&f \leftarrow \text{ objective function}\\
+				&(c_i)_{i\in\mathcal{E}} \leftarrow \text{ equality constraints}\\
+				&(c_i)_{i\in\mathcal{I}} \leftarrow \text{inequality constraints}
+				\end{aligned}\right.
+		\end{equation}
+		
+		\paragraph{} We define the \textcolor{red}{\emph{feasible set}} $\Omega$ as to be the subset of $\mathbb{R}^n$ of points that satisfy the constraints : 
+		\begin{equation}
+			\label{eq::feasible_set}
+			\Omega = \left\{ x \in \mathbb{R}^n \, \vert \, c_i{x} = 0, \, \forall{i}\in\mathcal{E} \text{ and } c_i(x) \geq 0, \, \forall{i}\in\mathcal{I} \right\} 
+		\end{equation}
+		The problem (\ref{eq::constrained_optim_general}) can therefore be rewritten more compactly : 
+		\begin{equation}
+			\min_{x\in\Omega} f(x) 
+		\end{equation}
+		
+		\paragraph{} We'll define the \textcolor{red}{\textbf{active set}} $\mathcal{A}(x)$ at any $x\in\Omega$ as the union of equality constraints indices with the saturated inequality constraints : 
+		\begin{equation}
+			\forall{x}\in\Omega, \quad \mathcal{A}(x) = \mathcal{E} \cup \left\{ i \in \mathcal{I} \, \vert \, c_i(x) = 0\right\} 
+		\end{equation}
+		
+				
+		\paragraph{} The purpose of the following section is to derive mathematical characterizations of the solutions to the previous equation. We therefore need to insist on the notion of local and global solutions. 
+		\begin{itemize}
+			\item a vector $x^*$ is said to be a local solution to (\ref{eq::constrained_optim_general}) if $x^*\in\Omega$ and there is a neighborhood $V(x^*)$ such that $f(x)\geq f(x^*)$, $\forall{x}\in\Omega\cap V(x^*)$. 
+			\item $x^*$ is a \emph{strict} local solution if the last inequality is strict. 
+			\item $x^*$ is an isolated local solution if $x^*\in\Omega$ and there is a neighborhood $V(x^*)$ such that $x^*$ is the only local solution in $\Omega\cap V(x^*)$
+		\end{itemize}
+	}
+	
+	\section{Building intuition toward necessary conditions}
+	{
+		\subsection{A first practical case}
+		{
+			\paragraph{} Let us consider the first case where : 
+			\begin{equation}
+				\mathcal{E} = \{1\}, \quad \mathcal{I} = \emptyset
+			\end{equation}
+			We are going to examine the first-order Taylor series approximation to the objective and constraint function.To retain feasibility with respect to the condition $c_1(x)$, we require making a small step $s$ so that : 
+			\begin{equation}
+				\begin{aligned}
+					0 &= c_1(x+s) \\
+					   &\simeq c_1(x) + s^T\nabla c_1(x) \\
+					   &= s^T\nabla c_1(x) 
+				\end{aligned}
+			\end{equation}
+			On the other hand, we want $s$ to produce a decrease of the objective function $f$, hence : 
+			\begin{equation}
+				\begin{aligned}
+					0 &> f(x+s) - f(x) \\
+					   &\simeq s^T\nabla f(x) 
+				\end{aligned}
+			\end{equation}
+			Hence the first order conditions require that we find a direction $s\in\mathbb{R}^n$ so that : 
+			\begin{equation}
+				\left\{\begin{aligned}
+					&(x+s) \in\Omega \\
+					& s^T\nabla c_1(x) = 0\\
+					& s^T\nabla f(x) < 0 
+				\end{aligned}\right.
+			\end{equation}
+			This suggest that if $x^*$ is a local minimizer, there exist no such direction $s$ and therefore $\nabla c_1(x^*)$ and $\nabla f(x^*)$ are \emph{parallel} (if not, take $ d = -\left(I - \displaystyle\frac{\nabla c_1(x) \nabla c_1(x)^T}{\lVert \nabla c_1(x) \rVert }\right)\nabla f(x) $). 
+			
+			\paragraph{} By introducing the \textbf{\textcolor{red}{Lagragian function}} : 
+			\begin{equation}
+				\begin{aligned}
+					\mathcal{L} \quad : \quad \mathbb{R}^n\times \mathbb{R} &\to \mathbb{R} \\
+					(x,\lambda_1) \quad &\to \quad f(x) - \lambda_1c_1(x) 
+				\end{aligned}
+			\end{equation}
+			and noticing that 
+			\begin{equation}
+				\grad[x]{\mathcal{L}}(x,\lambda_1) = \grad{f(x)} - \lambda_1\grad{c_1(x)}
+			\end{equation}
+			the parallel condition see earlier writes : at the solution $x^*$, $\exists \lambda_1^*$ sp that : 
+			\begin{equation}
+				\grad[x]{\mathcal{L}}(x^*, \lambda_1^*) = 0
+			\end{equation}
+			
+			\paragraph{} This first result suggests that e can search solutions of the equality constrained problem by seeking \emph{stationary points} of the Lagrangian function. The scalar $\lambda_1$ is called a \textcolor{red}{Lagrange multiplier} for the constraint $c_1(x)$. This reasoning gives out a necessary solutions, clearly not sufficient. 
+		}
+		\subsection{A second practical case}
+		{
+			\paragraph{} We now consider the opposite practical case of the single inequality condition :
+			\begin{equation}
+				\mathcal{E} = \emptyset, \text{ and } \mathcal{I} = \{1\}
+			\end{equation}
+			As before, we conjecture that a given feasible point $x$ is not optimal if we can find a small step that both retains feasibility and decreases the objective function. This leads to finding $s\in\mathbb{R}^n$ so that 
+			\begin{equation}
+				\begin{aligned}
+					&\nabla f(x) ^T s < 0 \\
+					&c_1(x) + s^T\nabla c_1(x) \leq 0 \text{ with } c_1(x) \geq 0
+				\end{aligned}
+			\end{equation} 
+			
+			\paragraph{} Two cases have to be treated appart : 
+			\begin{itemize}
+				\item $x$ lies \emph{inside} the feasible area. Therefore any step vector small enough that decreases the objective function works. The only time such a step cannot be found (and therefore local optimality has been reached) is when $\grad{f(x)}=0$. 
+				\item $x$ lies on the boundary of the feasible set, so that $c_1(x) = 0$. The previous conditions become :
+				\begin{equation}
+					\left\{ \begin{aligned}
+						&s^T\grad{c_1(x)} \geq 0 \\
+						& s^T\grad{f(x)} < 0 
+					\end{aligned}\right. 
+				\end{equation}
+			which defines the intersection of an open-half space and a closed one.
+				 \vspace{10pt} 
+				\begin{figure}[h!]
+					\begin{center}
+						\includegraphics[width=0.2\linewidth]{iq_feasible_set}
+						\caption{First-order feasible directions}
+					\end{center}
+				\end{figure}
+				With the above drawing, it is clear that such a direction does not exist (therefore we reached local optimality) when 
+				\begin{equation}
+					\grad{f(x)} = \lambda_1 \grad{c_1(x)}, \quad \lambda_1 \geq 0 
+				\end{equation}
+				Such an optimality conditions can be summed up by making reference to the Lagrangian : 
+				\begin{equation}
+					\grad[x]{\mathcal{L}}(x^*,\lambda_1^*)  = 0 \text{ for some } \lambda_1^*\geq 0
+					\end{equation}
+					with $\lambda_1^*c_1(x^*) = 0$. This latest equation is known as the \textcolor{red}{complementary condition}. 
+			\end{itemize}
+		}
+		\subsection{Tangent cone and constraint qualifications}
+		{
+			\paragraph{} The approach we had in the latest section (i.e first-order Tayor expansion of the constraint and objective functions to form a problem where both constraints and objective functions are linear) makes sense only when the linearized approximation capture the essential geometric features of the feasible set near the point $x$ considered. 
+			
+			\paragraph{} \textbf{\textcolor{red}{Constraint qualifications}} are assumptions that ensure similarity of the constraint set $\Omega$ and its linearized approximation in a neighborhood of $x^*$.  We will give two definitions, one for the tangent cone and another for set of linearized feasible directions. Both are cones of $\mathbb{R}^n$. 
+			\vspace{10pt}
+			
+			\coolbox{white}{\textcolor{black}{Set of feasible directions}}
+			{
+				Given a feasible point $x$ and the active constraint set $\mathcal{A}(x)$, the set of linearized feasible directions $\mathcal{F}(x)$ is given by the directions that can be taken to keep $x$ feasible in the first order : 
+				\begin{equation}
+					\forall x\in\Omega, \quad \mathcal{F}(x) = \left\{ \
+						d \left\vert 
+						\begin{aligned}
+							&d^T\grad{c_i(x)} = 0, \quad &i \in\mathcal{E} \\
+							&d^T\grad{c_i(x)} \geq 0, \quad &i\in\mathcal{I}\cap \mathcal{A}(x)
+						\end{aligned}\right.\right\}
+				\end{equation}
+			}
+	
+			\vspace{10pt}
+			
+			\coolbox{white}{\textcolor{black}{Tangent cone}}
+			{
+				The vector $d$ is said to be a tangent vector to $\Omega$ at $x\in\Omega$ if there is a feasible sequence $(z_k)_k$ approaching $x$ (i.e $z_k\in\Omega, \forall k\in\mathbb{N}$ and $z_k\underset{k\to\infty}{\to} x$) and a sequence of positive scalars $(t_k)_k$ with $t_k\underset{k\to\infty}{\to} 0$ with : 
+				\begin{equation}
+					d = \lim_{k\to\infty} \frac{z_k-x}{t_k}
+				\end{equation}
+				The set of all tangent directions to $\Omega$ in $x$ is called the tangent cone in $x$ and is noted $T_\Omega(x)$. 
+			}
+			
+			\paragraph{} More precisely, constraint qualifications are conditions underwhich the linearized feasible set $\mathcal{F}(x)$ is similar to the tangent cone $T_\Omega(x)$. They ensure that $\mathcal{F}(x)$ captures the essential features of $\Omega$ in the vicinity of $x$, and they allow to apply the first-order reasoning we held before. 
+			
+			\paragraph{} We introduce here the \textbf{\textcolor{red}{Linear Independent Constraint Qualification}} or LICQ. Given the point $x\in\Omega$ and the set $\mathcal{A}(x)$, we say that the linear independent constraint qualification holds in the set of active constraint gradients : 
+			\begin{equation}
+				\left\{ \nabla c_i(x) \, \vert \, i \in\mathcal{A}(x) \right\} 
+			\end{equation}
+			is linearly independent. 
+		}
+	}
+	\section{Optimality conditions}
+	{
+		\subsection{First-order optimality conditions}
+		{
+			\paragraph{} Here we state first-order necessary conditions for $x^*\in\Omega$ to be a local minimizer. For the general constrained optimization problem (\ref{eq::constrained_optim_general}) we introduce the corresponding Lagrangian : 
+			\begin{equation}
+				\begin{aligned}
+					\mathcal{L} \quad : \quad \mathbb{R}^n \times \mathbb{R}^m \quad &\to \quad \mathbb{R}\\
+					(x,\lambda) \quad &\to \quad f(x) - \sum_{i\in\mathcal{E}\cup \mathcal{I}} \lambda_i c_i(x) 
+				\end{aligned}		
+			\end{equation}
+			with $m = \vert \mathcal{E} \vert + \vert \mathcal{I} \vert$. 
+			
+			\vspace{10pt}
+			
+			\coolbox[2pt]{black}{\textcolor{red}{Karush-Kuhn-Tucker first order conditions}}
+			{
+				Let $x^*$ be a local solution to the problem (\ref{eq::constrained_optim_general}). Assuming that $f$ and $(c_i)_{i\in\mathcal{E}\cup \mathcal{I}}$ are continuously differentiable on $\Omega\subset\mathbb{R}^n$, and that the LICQ holds at $x^*$, we have the following results. 
+				\newline
+				$\exists \lambda\in\mathbb{R}^m$ such that the following are verified at $(x^*,\lambda^*)$ :
+				\begin{equation}
+					\grad[x]{\mathcal{L}}(x^*,\lambda^*) = 0 				
+				\end{equation}
+				\begin{equation}
+					c_i(x^*) = 0, \quad \forall i \in\mathcal{E}
+				\end{equation}
+				\begin{equation}
+					c_i(x^*)\geq0, \quad \forall i\in\mathcal{I}
+				\end{equation}
+				\begin{equation}
+					\lambda_i^*\geq 0, \quad \forall i \in \mathcal{I}
+				\end{equation}
+				\begin{equation}
+					\lambda_i^*c_i(x^*) = 0, \quad \forall i\in\mathcal{E}\cup \mathcal{I}
+				\end{equation}
+			}
+			
+			\noindent The first condition can be rewritten as : 
+			\begin{equation}
+				\grad{f}(x^*) - \sum_{i\in\mathcal{A}(x)} \lambda_i^*\grad{c_i}(x^*) = 0
+			\end{equation}
+			
+			\paragraph{} The proof to the following result is quite complex, but relies on fundamental results of constrained optimization. We'll detail only one of them here, given hereinafter. 
+			
+			\paragraph{} Indeed, we have that if $x^*$ is a local solution of the general constrained optimization problem, then : 
+			\begin{equation}
+				\forall d\in T_\Omega(x), \quad  d^T\grad{f}(x^*) \geq 0
+			\end{equation}
+			\vspace{10pt} 
+			
+			\hfill
+			\begin{minipage}{0.9\linewidth}
+			{
+				\it
+				\textbf{Proof : } 
+				Let $d\in T_\Omega(x)$ such that 
+				\begin{equation}
+					d^T\grad{f}(x) < 0 
+				\end{equation}
+				Then by definition, $\exists (z_k)_k\in\Omega^{\mathbb{N}}$ and $(t_k)_k\in\mathbb{R}^N$ so that : 
+				\begin{equation}
+					d = \frac{z_k-x}{t_k} 
+				\end{equation}
+				and therefore 
+				\begin{equation}
+					z_k = x - t_kd 
+				\end{equation}
+				Since : 
+				\begin{equation}
+					\begin{aligned}
+						f(z_k) &= f(x) + (z_k - x)\grad{f}(x) + o(\lVert z_k -x \rVert) \\
+							  &= f(x) + t_kd \grad{f}(x) + o(\lVert z_k -x \rVert) \\
+							  &< f(x) + \frac{1}{2} t_kd \grad{f}(x) \text{ for $k$ sufficiently large}
+							  &< f(x) 
+					\end{aligned}
+				\end{equation}
+				which is in contradiction with the fact that $x$ is a local minimizer, hence proving the result. 
+			}
+			\end{minipage}
+			
+		\subsection{Second-order conditions}
+		{
+			\paragraph{} What role do the second order derivatives of $f$ and $(c_i)_i$ play in the optimality conditions ? They actually serve as a tie-breaking rule (same principle as the Hessian curvature for unconstrained problems). \newline
+			In the following, we'll assume $f$ and $(c_i)_{i\in\mathcal{E}\cup\mathcal{I}}$ are twice continuously differentiable. 
+			
+			\paragraph{} Given $\mathcal{F}(x^*)$ and some Lagrange multipliers $\lambda^*$ satisfying the KKT conditions, we define the \textcolor{red}{\emph{critical cone}} as follows : 
+			\begin{equation}
+				\mathcal{C}(x^*,\lambda^*) = \left\{ w \in \mathcal{F}(x^*) \, \vert \, \grad{c_i}(x^*)^Tw = 0, \, i\in\mathcal{A}(x^*)\cap \mathcal{I}\text{ with } \lambda_i^*>0 \right\} 
+			\end{equation}
+			which describes the directions that would tend to adhere to the active inequality constraints even when we where to make small changes to the objectives, as well as equality constraints. 
+			
+			\subsubsection{Second-order necessary conditions}
+			{
+				\paragraph{}Suppose that $x^*$ is a local solution to (\ref{eq::constrained_optim_general}) and that the LICQ holds. Let $\lambda^*$ be the Lagrange multiplier for which the KKT conditions are satisfied. Then : 
+				\begin{equation}
+					w^T\nabla_{xx}^2 \mathcal{L}(x^*,\lambda^*) w \geq 0, \qquad \forall w \in\mathcal{C}(x^*,\lambda^*) 
+				\end{equation} 
+			}
+			\subsubsection{Second-order sufficient conditions}
+			{
+				\paragraph{} Let $x^*\in\mathbb{R}^n$ be a feasible point and $\lambda^*\in\mathbb{R}^m$ so that the KKT conditions hold. If : 
+				\begin{equation}
+					w^T\nabla_{xx}^2\mathcal{L}(x^*,\lambda^*) w > 0, \qquad \forall x\in\mathcal{C}(x^*,\lambda^*)-\{0\}
+				\end{equation}
+				then $x^*$ is a strict local solution for (\ref{eq::constrained_optim_general}). 
+			}
+		}
+		
+		\subsection{Lagrande multipliers and sensitivity}
+		{
+			\paragraph{} One can wonder what is the intuitive signification of the Lagrange multipliers. We'll show here that $\lambda_i^*$ is a sensitivity measure of the optimal objective value $f(x^*)$ to the presence of the constraint $c_i$. 
+			
+			\paragraph{} Let $i\notin\mathcal{A}(x^*)$ such that $c_i(x^*)>0$. If we perturb $c_i$ by a tiny amount the constraint will still be inactive and $x^*$ will still be a local solution to the constrained problem. Since $i\notin\mathcal{A}(x^*)$, $\lambda_i^*=0$ truthfully indicates that $c_i$ plays no role in the behavior of the optimal point that is $x^*$. 
+			
+			\paragraph{}  Now let $i\in\mathcal{A}(x^*)$. Let us assume that we observe a small perturbation for the constraint $c_i$ : 
+			\begin{equation}
+				c_i(x) \geq -\eps \lVert c_i(x^*) \rVert 
+			\end{equation}
+			instead of $c_i(x)\geq 0$. We assume $\eps$ to be small enough so that the perturbed solution $x^*(\eps)$ still has the same set of active constraints as initially, as well as the Lagrange multipliers being not affected by the solution. Therefore we have : 
+			\begin{equation}
+				\begin{aligned}
+					-\eps\lVert \grad{c_i}(x^*) \rVert &= c_i(x^*(\eps)) - c_i(x^*) \\
+											&\simeq (x^*(\eps) - x^*)^T \grad{c_i(x^*)} 
+				\end{aligned}
+			\end{equation}
+			and 
+			\begin{equation}
+				0 = c_j(x^*(\eps)) - c_j(x^*)  \simeq (x^*(\eps) - x^*)^T \grad{c_j(x^*)} 
+			\end{equation}
+			On the other hand, thanks to the KKT solutions : 
+			\begin{equation}
+				\begin{aligned}
+					f(x^*(\eps)) - f(x^*) &\simeq (x^*(\eps)- x^*)^T\grad{f(x^*)} \\
+								     &= \sum_{j\in\mathcal{A}(x^*)} \lambda_j^*(x^*(\eps)-x^*)^T\grad{c_i}(x^*) \\
+								     &= -\eps\lambda_i\lVert c_i(x^*) \rVert 
+				\end{aligned}
+			\end{equation}
+			which therefore gives us the result : 
+			\begin{equation}
+				\color{red}
+				\frac{df(x^*(\eps))}{d\eps} = -\lambda_i \lVert c_i(x^*) \rVert 
+			\end{equation}
+			Therefore, if $\lambda_i \lVert c_i(x^*)\rVert $ is large, the optimal value is more sensitive to the placement of the i\textsuperscript{th} constraint. 
+		}
+	}
+	
+	\section{Duality}
+	{
+		\paragraph{} This theory is developed here to motivate some important algorithms (augmente Lagrangians, ..). \newline
+		We show here how we construct an alternative problem from the functions and data that define the original problem. In some case, it is easier to solve computationally than the primal problem. Let us rewrite the original problem as : 
+		\begin{equation}
+			\min_{x\in\mathbb{R}^n} f(x) \quad  \text{ s.t } \quad c(x)\geq 0, \quad \forall{i}\in\{1,\hdots,m\}
+		\end{equation}
+		with $c(x) = (c_1(x), \hdots, c_m(x))^T$. 
+		This allows us to rewrite the corresponding Lagrangian : 
+		\begin{equation}
+			\begin{aligned}
+					\mathcal{L} \quad : \quad \mathbb{R}^n \times \mathbb{R}^m \quad &\to \quad \mathbb{R}\\
+					(x,\lambda) \quad &\to \quad f(x) - \lambda^Tc(x)
+			\end{aligned}
+		\end{equation}
+		
+		\paragraph{} We define the \emph{dual objective function} as : 
+		\begin{equation}
+			\begin{aligned}
+					q \quad : \quad \mathbb{R}^n \quad &\to \quad \mathbb{R}\\
+						\lambda \quad &\to \quad \inf_{x}\mathcal{L}(x,\lambda)
+			\end{aligned}
+		\end{equation}
+		and we define the \textcolor{red}{\emph{dual problem}} as : 
+		\begin{equation}
+			\max_{\lambda\in\mathbb{R}^m} q(\lambda)
+		\end{equation}
+		
+		\paragraph{} The optimal value of the dual problem gives a lower bound on the optimal objective for the primal problem. This is a consequence of the \textbf{\textcolor{red}{weak duality}} result : 
+		\vspace{10pt} 
+		
+		\coolbox{white}{\textcolor{black}{Weak duality}}
+		{
+			$\forall{x}\in\Omega$ and any $\bar{\lambda}\geq 0$, we have that : 
+			\begin{equation}
+				q(\bar{\lambda}) \leq f(\bar{x}) 
+			\end{equation}
+		}
+		
+		\paragraph{} Such a result can lead in certain case to using the solutions to the dual problem to derive solutions to the primal problem : 
+		\vspace{10pt}
+		
+		\coolbox{white}{}
+		{
+			Suppose that $f$ and $(c_i)_{i\in\{1,\hdots,m\}}$ are convex and continuoulsy differentiable on $\mathbb{R}^n$. Let $\bar{x}\in\Omega$ be a solution to the primal problem at which the LICQ holds. Suppose that $\hat{\lambda}$ solves the dual problem, and that the infimum in $\inf_x\mathcal{L}(x,\hat{\lambda})$ is reached at $\hat{x}$. if $\mathcal{L}(\cdot,\hat{\lambda})$ is a strictly convex function, then $\hat{x} = \bar{x}$. 
+		}
+	}
+	
+
+\end{document}

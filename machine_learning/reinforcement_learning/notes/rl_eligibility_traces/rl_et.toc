@@ -1,0 +1,35 @@
+\select@language {english}
+\contentsline {paragraph}{}{1}{section*.2}
+\contentsline {section}{\numberline {1}$n$-step predictions}{1}{section.1}
+\contentsline {paragraph}{}{1}{section*.3}
+\contentsline {paragraph}{}{1}{section*.4}
+\contentsline {paragraph}{}{2}{section*.5}
+\contentsline {section}{\numberline {2}The forward view}{2}{section.2}
+\contentsline {paragraph}{}{2}{section*.6}
+\contentsline {paragraph}{}{2}{section*.7}
+\contentsline {section}{\numberline {3}The backward view}{3}{section.3}
+\contentsline {paragraph}{}{3}{section*.8}
+\contentsline {paragraph}{}{3}{section*.9}
+\contentsline {paragraph}{}{3}{section*.10}
+\contentsline {paragraph}{}{3}{section*.11}
+\contentsline {section}{\numberline {4}Equivalence between the two formulation}{3}{section.4}
+\contentsline {paragraph}{}{3}{section*.12}
+\contentsline {paragraph}{}{3}{section*.13}
+\contentsline {section}{\numberline {5}Algorithms}{4}{section.5}
+\contentsline {subsection}{\numberline {5.1}Sarsa($\lambda $)}{4}{subsection.5.1}
+\contentsline {paragraph}{}{4}{section*.14}
+\contentsline {paragraph}{}{5}{section*.15}
+\contentsline {subsection}{\numberline {5.2}Watkins's Q($\lambda $)}{5}{subsection.5.2}
+\contentsline {paragraph}{}{5}{section*.16}
+\contentsline {paragraph}{}{5}{section*.17}
+\contentsline {paragraph}{}{5}{section*.18}
+\contentsline {subsection}{\numberline {5.3}Peng's Q($\lambda $)}{6}{subsection.5.3}
+\contentsline {paragraph}{}{6}{section*.19}
+\contentsline {paragraph}{}{6}{section*.20}
+\contentsline {section}{\numberline {6}Advanced topics}{6}{section.6}
+\contentsline {subsection}{\numberline {6.1}Replacing traces}{6}{subsection.6.1}
+\contentsline {paragraph}{}{6}{section*.21}
+\contentsline {subsection}{\numberline {6.2}Variable $\lambda $}{6}{subsection.6.2}
+\contentsline {paragraph}{}{6}{section*.22}
+\contentsline {section}{\numberline {7}Conclusion}{6}{section.7}
+\contentsline {paragraph}{}{6}{section*.23}

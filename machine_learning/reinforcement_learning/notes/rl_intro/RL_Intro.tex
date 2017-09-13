@@ -1,0 +1,219 @@
+%!TEX encoding = IsoLatin
+
+%% Document is article 
+\documentclass[a4paper]{article}
+
+%% ----------------------------------------------------- PACKAGES ----------------------------------------------------- %%
+\usepackage{coolArticle}
+
+%% ---------------------------------------------------- DOCUMENT ---------------------------------------------------- %%
+\begin{document}
+
+	\titlebox{0.4}{Reinforcement Learning}{The Reinforcement Learning Problem}
+	
+		
+	\vhrulefill{2pt}
+	
+	\tableofcontents
+	
+	\vhrulefill{2pt}
+	
+	\section{Vocubalary and notations}
+	{
+		\paragraph{} $\blacktriangleright$ The reinforcement learning problem is trying to make an \emph{agent} (or learner, decision-maker) learns from its interactions with its \emph{environment}. This environment generates \emph{rewards} (scalar values) that the agent is seeking to maximize over time. 
+		
+		\paragraph{} Given a sequence of time steps $t=0,1,\hdots,n$, the agent receives at each $t_i$ a representation of the environment \textcolor{red}{state}, denoted $s_t\in\mathcal{S}$ where $\mathcal{S}$ denotes the set of all possible states. On the basis of this \emph{state signal}, the agent selects an \textcolor{red}{action} $a_t \in\mathcal{A}(s)$ where $\mathcal{A}(s)$ denote all the actions available in the state $s\in\mathcal{S}$. One time step later, the agent receives a numerical \textcolor{red}{reward} $r_{t+1}\in\mathcal{R}$ and find itself in a new state $s_{t+1}$. 
+		
+	\paragraph{} At each time step, the agent implement a mapping from state to probabilities of selecting each possible action. Such a mapping is called the agent's \textbf{\textcolor{red}{policy}} and is noted $\pi_t$ : 
+	\begin{equation}
+		\pi_t(s,a) = \text{ probability of picking action } a \text{ in state } s_t
+	\end{equation}
+	The key goal of reinforcement learning is to teach the agent how to change its policy as a result of a experience in order to maximize its reward over the long run. 
+	
+	\paragraph{} $\blacktriangleright$ We seek the maximize the expected return $R_t$, which is a mapping from the reward sequence to $\mathbb{R}$. For instance : 
+	\begin{equation}
+		R_t = \sum_{i=0}^{T} r_{t+1+i}
+	\end{equation}
+	where $T$ is the final step. That case is the particular one where each episode ends in a \emph{terminal state}, which is followed by a standard reset state. We denote $\mathcal{S}^+=\left\{ s \in\ \mathcal{S} \, \vert \, s \text{ is terminal}\right\}$.
+	
+	\paragraph{} We can also face continuing tasks (i.e $T=+\infty$). In such case, the agents seek to maximize the \emph{discounted return} : 
+	\begin{equation}
+		R_t = \sum_{k=0}^{+\infty} \gamma^kr_{t+k+1}
+	\end{equation}
+	where $\gamma<1$ is the \textcolor{red}{discounting rate}. 
+	}
+
+	\section{Markov Decision Process}
+	{
+		\subsection{The Markov property}
+		{
+			\paragraph{} To make the choice on action tractable, it would need to rely only on the basis of the latest state signal, which should thus summarize past sensations compactly, retaining all relevant information. 
+			
+			\paragraph{} As in many artificial intelligence algorithms, we ask for the state signal to be \textbf{\textcolor{red}{Markov}}, which would mean that the knowledge contained in a state is equivalent to to knowledge of the full history contained in the time series of the state signals. 
+			
+			\paragraph{} Assuming a finite number number of state the Markov property writes (known as strong Markov property) for the state and reward signal : 
+			\begin{equation}
+				\Pro{ s_{t+1} = s',\, r_{t+1}=r \, \vert \, s_{t}, a_t, r_t ,\hdots, s_{1}, a_{1}, r_1} = \Pro{ s_{t+1} = s',\, r_{t+1}=r \, \vert \, s_{t}, a_{t} }
+			\end{equation}
+			for all $s',r$ and sequence $(s_t,a_t,r_t)_{t\in\mathbb{N}}$. 
+		}
+		
+		\subsection{Reinforcement Learning under the Markov assumption}
+		{
+			A reinforcement learning that satisfy the Markov property is called a \textbf{\textcolor{red}{Markov Decision Process}}. When the set of state and space is finite, we call it a finite MDP.  
+		}
+		
+		\paragraph{} $\blacktriangleright$ A particular FMDP is defined by its state and action step and by the one-step dynamic of its environment : 
+		\begin{itemize}
+			\item Transition probabilities : 
+				\begin{equation}
+					\mathcal{P}_{ss'}^a = \Pro{s_{t+1}=s' \, \vert \, s_t = s, a_t=a}
+				\end{equation}
+			\item Expected value of the next reward : 
+				\begin{equation}
+					\mathcal{R}_{ss'}^a = \E[\pi]{ r_{t+1} \, \vert \, s_t=s, a_t=a, s_{t+1}=s'}
+				\end{equation}
+		\end{itemize}
+		
+		\subsubsection{The state value function}
+		{
+			\paragraph{} Almost all RL algorithms are based on estimating value functions. A value function is a function that maps the state space in $\mathbb{R}$, and estimates how good (defined in terms of future expected reward) it is for an agent to be at a given state. 
+			
+			\paragraph{} Before going further, let us remind the policy definition : 
+			\begin{equation}
+				\begin{aligned}
+					\pi \, : \, (\mathcal{S}\times \mathcal{A}(S)) \, &\to \, [0,1] \\
+							(s,a) &\to \pi(s,a)
+				\end{aligned}
+			\end{equation} 
+			where $\pi(s,a)$ is the probability of taking action $a$ when $s_t=s$. 
+			
+			\paragraph{} Hence the value of a state $s$ under a policy $\pi$, noted $V^\pi(s)$ \textbf{is the expected return of $s\in\mathcal{S}$ when following the policy} $\pi$. 
+			\vspace{10pt}
+			
+			\coolbox{white}{\textcolor{black}{State-value function}}
+			{
+				\begin{equation}
+					\begin{aligned}
+						\forall{s}\in\mathcal{S}, \quad V^\pi(s) &= \E[\pi]{R_t \, \vert \, s_t=s}\\
+														 &= \E[\pi]{\sum_{k=0}^{+\infty} \gamma^kr_{t+k+1} \, \vert \, s_t=s}
+					\end{aligned}
+				\end{equation}
+			}
+			
+			\noindent This function is also called the \textcolor{red}{state-value function} for the policy $\pi$. 
+			}
+			\subsubsection{The action value function}
+			{
+			\paragraph{} Similarly, we define the value of taking action $a$ in state $s$ under a policy $\pi$, denoted $Q^\pi(s,a)$ as the expected return starting from $s$, then following action $a$ and then following the policy $\pi$. This function is called the \textcolor{red}{action-value function} for the policy $\pi$. 
+			\vspace{10pt}
+			
+			\coolbox{white}{\textcolor{black}{Action-value function}}
+			{
+				\begin{equation}
+					\begin{aligned}
+						\forall{(s,a)}\in\mathcal{S}\times\mathcal{A}(s), \quad Q^\pi(s,a) &= \E[\pi]{R_t \, \vert \, s_t=s, a_t=a}\\
+														 &= \E[\pi]{\sum_{k=0}^{+\infty} \gamma^kr_{t+k+1} \, \vert \, s_t=s, a_t=a}
+					\end{aligned}
+				\end{equation}
+			}
+		}
+		
+		\subsection{Bellman equations for MDP}
+		{
+			\paragraph{} Both those value functions satisfy particular recursive relationships. Indeed, for any policy and state, the following consistency holds between the value of the state and its successors : 
+			
+			\paragraph{} Since : 
+			\begin{equation}
+				\begin{aligned}
+					V^\pi(s) &= \E[\pi]{\sum_{k=0}^{+\infty} \gamma^kr_{t+k+1} \, \vert \, s_t=s} \\
+						     &= \E[\pi]{ r_{t+1} + \gamma \sum_{k=0}^{+\infty} \gamma^kr_{t+k+2}  \, \vert \, s_t=s}
+				\end{aligned}
+			\end{equation}
+			conditioning with respect to the possible action $a$ : 
+			\begin{equation}
+				\begin{aligned}
+					V^\pi(s) &= \sum_{a\in\mathcal{A}(s)} \E[\pi]{ r_{t+1} + \gamma \sum_{k=0}^{+\infty} \gamma^kr_{t+k+2}  \, \vert \, s_t=s, a_t = a} \Pro{ a_t =a \, \vert \, s_t =s} \\
+						    &= \sum_{a\in\mathcal{A}(s)}\sum_{s_{t+1}=s'} \E[\pi]{ r_{t+1} + \gamma \sum_{k=0}^{+\infty} \gamma^kr_{t+k+2}  \, \vert \, s_t=s, a_t = a, s_{t+1}=s'} \Pro{ a_t =a \, \vert \, s_t =s}\Pro{ s_{t+1}=s' \, \vert \, s_t =s, a_t = a} 
+				\end{aligned}
+			\end{equation}
+			
+			and therefore :
+			\begin{equation}
+				\begin{aligned}
+					V^\pi(s) &= \sum_{a\in\mathcal{A}(s)} \pi(s,a) \sum_{s_{t+1}=s'} \mathcal{P}_{ss'}^a \left( \E[\pi]{r_{t+1} + \gamma \sum_{k=0}^{+\infty} \gamma^kr_{t+k+2}  \, \vert \, s_t=s, a_t = a, s_{t+1}=s'}\right)
+				\end{aligned}
+			\end{equation}
+			
+			\paragraph{} Hence we obtain what is called the \textbf{\textcolor{red}{Bellman equation for}} $V^\pi$ : 
+			\vspace{10pt}
+			
+			\coolbox{white}{\textcolor{black}{Bellman equation for $V^\pi$} }
+			{
+				\begin{equation}
+					\forall{s}\in\mathcal{S}, \quad V^\pi(s) = \sum_{a\in \mathcal{A}(s)} \pi(s,a) \sum_{s'} \mathcal{P}_{ss'}^a \left( \mathcal{R}_{ss'}^a + \gamma V^\pi(s')\right)
+				\end{equation}
+			}
+			
+			\subsubsection{Optimal value functions}
+			{
+				\paragraph{} Value functions define a partial ordering in the policies space. Indeed, we say that $\pi' \geq \pi$ if $\forall s \in\mathcal{S}, \, V^{\pi'}(s) \geq V^\pi(s)$. In a FMDP, there is always at least one policy that is better our equal to all other policies. We call this policy the \textcolor{red}{optimal policy} $\pi^*$. 
+				
+				\paragraph{} All optimal policies share the same state-value function called the \emph{optimal state value function} $V^*$ : 
+				\begin{equation}
+					\forall{s}\in\mathcal{S}, \quad V^*(s) = \max_{\pi} V^\pi(s)
+				\end{equation}
+				and the same optimal action-value function :
+				\begin{equation}
+					\forall{(s,a)}\in\mathcal{S}\times\mathcal{A}(S), \quad Q^*(s,a) = \max_{\pi} Q^\pi(s,a)
+				\end{equation} 
+				
+				\paragraph{} There exists a straight-forward relation between those two optimal functions : 
+				\begin{equation}
+					\forall{(s,a)}\in\mathcal{S}\times\mathcal{A}(S), \quad Q^*(s,a) = \E[\pi]{r_{t+1} + \gamma V^*(s_{t+1}) \, \vert \, s_t=s, a_t =a}
+				\end{equation}
+				Also, because $V^*$ is the value function for a policy, it satisfies the self consistency given by the Bellman equation, giving rise to the \textbf{\textcolor{red}{Bellman optimality equation}}. Indeed, since $\forall s\in\mathcal{S}$ : 
+				\begin{equation}
+					\begin{aligned} 
+						V^*(s) &= \max_{a\in\mathcal{A}(s)} Q^*(s,a) \\
+							  &= \max_{a} \E[\pi]{R_t \, \vert \, s_t =s, a_t = a}\\
+							  &= \max_{a} \sum_{s'} P_{ss'}^a \E[\pi]{R_t \, \vert \, s_t =s, a_t = a, s_{t+1}=s'}\\
+							  &= \max_{a\in\mathcal{A}(s)} P_{ss'}^a \E[\pi]{r_{t+1} + \gamma\sum_{k=0}^\infty \gamma^k r_{t+k+2} \, \vert \, s_t =s, a_t = a, s_{t+1}=s'}
+					\end{aligned}
+				\end{equation}
+				leading to the Bellman optimality equations :
+				\vspace{10pt}
+				
+				\coolbox{white}{\textcolor{black}{Bellman optimality equations} }
+				{
+					Optimality equation for $V^*$ :
+					\begin{equation}
+						\forall{s}\in\mathcal{S}, \quad V^*(s) = \max_{a\in\mathcal{A}(s)} \sum_{s'}P_{ss'}^a \left( \mathcal{R}_{ss'}^a + \gamma V^*(s')\right)
+					\end{equation}
+					Optimality equation for $Q^*$ :
+					\begin{equation}
+						\forall{(s,a)}\in\mathcal{S}\times\mathcal{A}(s), \quad Q^*(s,a) = \sum_{s'}P_{ss'}^a \left( \mathcal{R}_{ss'}^a + \gamma \max_{a'\in\mathcal{A}(s')}Q^*(s',a')\right)
+					\end{equation}
+				}
+				
+				\paragraph{} For FMDP, the Bellman optimality equation has a unique solution, independant of the policy. Indeed, the optimal policy is the \emph{greedy policy} (follows action with argmax action-value function) with respect to the optimal value function. 
+				
+				\paragraph{} However, optimal policies (or equivalently optimal value functions) require a long time to compute, and extreme computational cost for large state spaces. 
+			}
+			
+		}
+		
+		\section{Quick summary}
+		{
+			\begin{itemize}
+				\item The agent learns how to behave thanks to its interaction with the environment. 
+				\item Actions are choices made by the agent. States are basis for making this choices and rewards are the basis for evaluating them. 
+				\item A policy is a stochastic rule by which the agent selects actions as a function of its current state. 
+				\item The return is a function of future rewards the agents seeks to maximize over time. 
+				\item The Markov property is the basis for MDP. It indicates that the state signals compactly summarize the past without degrading the ability to predict the future. 
+				\item Even in a FMDP with complete knowledge of its environment, the memory load may be too heavy to store the value function : one may need to find a good, quick approximation of such a function. 
+			\end{itemize}
+		}
+	}
+	
+\end{document}

@@ -1,0 +1,53 @@
+\select@language {english}
+\contentsline {section}{\numberline {1}Regularization}{1}{section.1}
+\contentsline {paragraph}{}{1}{section*.2}
+\contentsline {subsection}{\numberline {1.1}Parameter norm penalty}{1}{subsection.1.1}
+\contentsline {paragraph}{}{1}{section*.3}
+\contentsline {paragraph}{}{1}{section*.4}
+\contentsline {subsection}{\numberline {1.2}Noise robustness}{2}{subsection.1.2}
+\contentsline {paragraph}{}{2}{section*.5}
+\contentsline {paragraph}{}{2}{section*.6}
+\contentsline {subsection}{\numberline {1.3}Early stopping}{2}{subsection.1.3}
+\contentsline {paragraph}{}{2}{section*.7}
+\contentsline {paragraph}{}{2}{section*.8}
+\contentsline {subsection}{\numberline {1.4}Dropout}{2}{subsection.1.4}
+\contentsline {paragraph}{}{2}{section*.9}
+\contentsline {paragraph}{}{3}{section*.10}
+\contentsline {paragraph}{}{3}{section*.11}
+\contentsline {subsection}{\numberline {1.5}Others}{3}{subsection.1.5}
+\contentsline {paragraph}{}{3}{section*.12}
+\contentsline {section}{\numberline {2}Optimization}{3}{section.2}
+\contentsline {paragraph}{}{3}{section*.13}
+\contentsline {subsection}{\numberline {2.1}Minibatch optimization}{3}{subsection.2.1}
+\contentsline {paragraph}{}{3}{section*.14}
+\contentsline {paragraph}{}{4}{section*.15}
+\contentsline {subsection}{\numberline {2.2}Challenges in neural network optimization}{4}{subsection.2.2}
+\contentsline {paragraph}{}{4}{section*.16}
+\contentsline {subsection}{\numberline {2.3}Basic algorithms}{4}{subsection.2.3}
+\contentsline {subsubsection}{\numberline {2.3.1}Stochastic gradient descent}{4}{subsubsection.2.3.1}
+\contentsline {paragraph}{}{4}{section*.17}
+\contentsline {paragraph}{}{4}{section*.18}
+\contentsline {subsubsection}{\numberline {2.3.2}Momentum}{5}{subsubsection.2.3.2}
+\contentsline {paragraph}{}{5}{section*.19}
+\contentsline {paragraph}{}{5}{section*.20}
+\contentsline {paragraph}{}{5}{section*.21}
+\contentsline {subsubsection}{\numberline {2.3.3}Nesterov momentum}{5}{subsubsection.2.3.3}
+\contentsline {paragraph}{}{5}{section*.22}
+\contentsline {paragraph}{}{6}{section*.23}
+\contentsline {subsection}{\numberline {2.4}Parameter initialization strategies}{6}{subsection.2.4}
+\contentsline {paragraph}{}{6}{section*.24}
+\contentsline {paragraph}{}{6}{section*.25}
+\contentsline {subsection}{\numberline {2.5}Adaptative learning rates algorithms}{6}{subsection.2.5}
+\contentsline {paragraph}{}{6}{section*.26}
+\contentsline {subsubsection}{\numberline {2.5.1}AdaGrad}{7}{subsubsection.2.5.1}
+\contentsline {paragraph}{}{7}{section*.27}
+\contentsline {subsubsection}{\numberline {2.5.2}RMSProp}{7}{subsubsection.2.5.2}
+\contentsline {paragraph}{}{7}{section*.28}
+\contentsline {paragraph}{}{7}{section*.29}
+\contentsline {subsubsection}{\numberline {2.5.3}Adam}{7}{subsubsection.2.5.3}
+\contentsline {paragraph}{}{7}{section*.30}
+\contentsline {subsection}{\numberline {2.6}Approximate second order methods}{8}{subsection.2.6}
+\contentsline {paragraph}{}{8}{section*.31}
+\contentsline {paragraph}{}{8}{section*.32}
+\contentsline {paragraph}{}{8}{section*.33}
+\contentsline {paragraph}{}{8}{section*.34}

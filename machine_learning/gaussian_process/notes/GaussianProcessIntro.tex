@@ -1,0 +1,343 @@
+%!TEX encoding = IsoLatin
+
+%% Document is article 
+\documentclass[a4paper]{article}
+
+%% ----------------------------------------------------- PACKAGES ----------------------------------------------------- %%
+\usepackage{coolArticle}
+
+%% ---------------------------------------------------- DOCUMENT ---------------------------------------------------- %%
+\begin{document}
+
+	\titlebox{0.4}{Gaussian Process for Regression}{An introduction}
+	
+	\paragraph{} Unlike classical regression methods in Machine Learning, Gaussian process makes inference directly in the function space. Hence, the learned distribution is made not over weights, but over functions. 
+	
+	\vhrulefill{2pt}
+	
+	\tableofcontents
+	
+	\vhrulefill{2pt}
+	
+	
+	\section{Weight-space view}
+	{
+		Lets start by reminding the case of \textsf{linear regression} in weight-space view. We consider a training set :
+		\begin{equation}
+			\mathcal{D} = \left\{ (x_i,y_i),\, i\in\{1,\hdots,n\}\right\}
+		\end{equation}
+		with $x_i\in\mathbb{R}^d$, $\forall i\in\{1,\hdots, n\}$. The dataset is stored in the design matrix $X\in\mathcal{M}_{d,n}(\mathbb{R})$ (the $i^{th}$ column of X is made of $x_i$). $X$ is the \emph{design matrix}.
+		
+		\subsection{Bayesian linear regression}
+		{
+			\paragraph{} $\blacktriangleright$ We consider that the observed values $(y_i)_{i\in\{1,\hdots,n\}}$ differ from an underlying function $f$ from a centered Gaussian noise : 
+			\begin{equation}
+				y = f(x) + \varepsilon \qquad \varepsilon \sim \mathcal{N}(\varepsilon \, \vert \, 0,\sigma^2)
+			\end{equation}
+			For now, we will consider that the underlying function $f$ is linear in $x$. Hence we obtain that $\forall i\in\{1, \hdots, n\}$ : 
+			\begin{equation}
+				y_i = w^Tx_i + \varepsilon
+			\end{equation}
+			hence $y_i \sim \mathcal{N}(y_i\, \vert w^Tx_i, \sigma)$
+			
+			\paragraph{} $\blacktriangleright$ The likelihood of the training set D is thus, if we suppose that drawing of $\varepsilon$ are independently distributed (hence making the $(y_i)_i$ independent) : 
+			\begin{equation}
+				\begin{aligned}
+					\condp{Y}{X,w} &= \prod_{i=1}^n \condp{y_i}{x_i,w} \\
+								&=\prod_{i=1}^n \mathcal{N}(y_i \, \vert \, w^Tx_i, \sigma^2)\\
+								&= \frac{1}{(2\pi\sigma^2)^{n/2}} \exp{ \left( -\frac{1}{2\sigma^2} \sum_{i=1}^n \left(y_i - w^Tx_i\right)^2\right)}\\
+								&=  \frac{1}{(2\pi\sigma^2)^{n/2}} \exp{\left(-\frac{1}{2\sigma^2}\left( \lVert Y - X^Tw\lVert \right)^2\right)}
+				\end{aligned}
+			\end{equation}
+			
+			\paragraph{} $\blacktriangleright$ Hence : 
+			\begin{equation}
+				\condp{Y}{X,w} = \mathcal{N}(Y\, \vert \, X^Tw, \sigma^2I_n)
+			\end{equation}
+			To comply with the Bayesian regression framework, we need to specify a \emph{prior distribution} for the weight vector $w$. Let us suppose that it is normally distributed : 
+			\begin{equation}
+				w \sim \mathcal{N}(w \, \vert \, 0, \Sigma_p)
+			\end{equation}
+			Let us now remind the Bayes' rule : 
+			\vspace{10pt}
+			
+			\coolbox{white}{\textcolor{black}{Bayes' rule}}
+			{
+				$$\condp{A}{B} \propto \condp{B}{A} \cdot p(A)$$
+			}
+			
+			\noindent Then we have that : 
+			\begin{equation}
+				\underbrace{\condp{w}{X,Y}}_{\text{posterior}} \propto \underbrace{\condp{Y}{X,w}}_{\text{likelihood}} \underbrace{p(w)}_{\text{prior}}
+			\end{equation}
+			
+			\paragraph{} By a standard tractation known as "completing the square" of a Gaussian distribution, it is then easy to that the \emph{maximum-a-posteriori} (MAP) solutions is given by : 
+			\vspace{10pt}
+			
+			\coolbox{white}{\textcolor{black}{MAP Bayesian solution for linear regression}}
+			{
+				\begin{equation}
+					w_{MAP} \sim \mathcal{N}(w_{MAP} \, \vert \, \frac{1}{\sigma^2}A^{-1}Xy, A^{-1})
+				\end{equation}
+				with 
+				\begin{equation}
+					A = \frac{1}{\sigma_n^2} XX^T + \Sigma_p^{-1}
+				\end{equation}
+			}
+			
+							
+				\paragraph{} One can notice the presence of the term $\displaystyle\frac{1}{\sigma_n^2} XX^T$ that is derived in the tractation of the maximum-likelihood solution $w_{ML}$. This solutions is actually equivalent to \emph{Ridge-regression} for $\Sigma_p = \lambda Id$. 
+		}
+		
+		\subsection{Making new prediction}
+		{
+			\paragraph{} Of course, our motivation is not to draw weight points from the posterior distribution. We want to be able to make new predictions from new inputs vector $x^*$. This is done by averaging over all values for $w$ : 
+			\begin{equation}
+				p(f_*\, \vert \, x_*,X,Y) = \int_{w\in\mathbb{R}^n} \condp{f_*}{x_*, w}\cdot \condp{w}{X,Y}dw
+			\end{equation}
+			which leads to the following expression, knowing that $f_* = w^Tx^*$ : 
+			\vspace{10pt}
+			
+			\coolbox{white}{\textcolor{black}{MAP prediction}}
+			{
+				$$f_*\, \vert \, x_*,X,Y \sim \mathcal{N}\left(f_*\, \Big| \,  \frac{1}{\sigma^2}(x^*)^TA^{-1}Xy, \,(x^*)^TA^{-1}x^*\right)$$
+			}
+		}
+		
+		\subsection{Change to feature space}
+		{
+			\paragraph{} Of course, simple linear regression can sometimes poorly fit our data. The trick is thus to convert the inputs vectors into vectors of feature space. Let 
+			\begin{equation}
+				(\Phi_1, \hdots, \Phi_N) \, : \, \mathbb{R}^d \to \mathbb{R}
+			\end{equation}
+			Then $\Phi = (\Phi_1, \hdots, \Phi_N)$ is a functions that map $\mathbb{R}^d$ into $\mathbb{R}^n$. We can therefore derive the exact same procedure as before but with a weight vector living in \emph{feature space} : 
+			\begin{equation}
+				f(x) = w^T\Phi(x)
+			\end{equation}
+			
+			\coolbox{white}{\textcolor{black}{MAP prediction with features}}
+			{
+				$$f_*\, \vert \, x_*,X,Y \sim \mathcal{N}\left(f_*\, \Big| \, \Phi_*\Sigma_p\Phi(K+\sigma^2I)^{-1}y, \, \Phi_*^TK\phi_* - \Phi_*\Sigma_p\Phi(K+\sigma^2I)^{-1}\Phi^T\Sigma_p\Phi_*\right)$$
+				where we used $\Phi = \Phi(X)$, $\Phi_* = \Phi(x^*)$ and $K = \Phi^T\Sigma_p\Phi$.
+			}
+			
+			\noindent As one can see, feature vectors enter this expression with always the same structure, that is : 
+			\begin{equation}
+				\begin{aligned}
+					k(x,x') &= \Phi(x)^T \Sigma_p \Phi(x')\\
+						  &= \Psi(x)^T\Psi(x)
+				\end{aligned}
+			\end{equation}
+			where $k(\cdot,\cdot)$ is the \emph{\textcolor{red}{kernel or covariance function}}, and where we used that $\Sigma_p\in\mathcal{S}_{n}^{++}(\mathbb{R})$ to transform the initial kernel expression into a \emph{scalar product in feature space} ! Hence, using the kernel function enables one to leave the exact expression of the feature aside, by only employing a given scalar product in feature space. 
+		}
+	}
+	
+	\section{Function-space view}
+	{
+		\subsection{Gaussian Process}
+		{
+		\vspace{10pt}
+			\coolbox{white}{\textcolor{red}{Gaussian Process}}
+			{
+				A Gaussian process can be described as a continuous process $(X_t)$, which any finite number of which
+				\begin{equation}
+					(X_{t_1},\hdots, X_{t_n}, \hdots, X_{t_m})
+				\end{equation}
+				have a joint Gaussian distribution.
+			}
+			
+			\paragraph{} Because it is normally distributed, such a random vector is entirely described by its mean and covariance. Let us now consider our regression function as a Gaussian process, meaning that any collection of samples from $f$ will have a joint normal distribution. 
+			
+			\paragraph{} Let us then write that : 
+			\begin{equation}
+				\begin{aligned}
+					&m(x) = \mathbb{E}\left[f(x)\right] \\
+					&k(x,x') = \mathbb{E}\Big[ \big(f(x)-m(x)\big)\cdot\big(f(x')-m(x')\big)\Big]
+				\end{aligned}
+			\end{equation}
+		}
+		hence we will write the regressive Gaussian process as : 
+		\begin{equation}
+			f(x) \sim GP\Big( m(x), k(x,x') \Big) \qquad x\in\mathcal{X}
+		\end{equation}
+		
+		\subsection{From the Bayesian approach}
+		{
+			\paragraph{} Regarding the latter Bayesian development with prior $\omega\sim \mathcal{N}(\omega\, \vert \, 0, \Sigma_p)$. Then, given that $f = \omega^T \phi$ we have that 
+			\begin{equation}
+				\mathbb{E}\left[ f(x) \right] = 0
+			\end{equation}
+			\begin{equation}
+				\begin{aligned}
+					k(x,x') &= \mathbb{E}\left[ \phi(x)^T ww^T \phi(x')\right] \\
+						  &= \phi(x)^T \Sigma_p \phi(x')
+				\end{aligned}
+			\end{equation}
+		meaning that two samples $f(x)$ and $f(x')$ are jointly Gaussian with zero mean and covariance given by $\phi(x)^T \Sigma_p \phi(x')$. 
+		
+		\paragraph{} $\blacksquare$ A famous example of a covariance function is given by the \emph{square exponential} or \emph{Radial Basis Function} : 
+		\begin{equation}
+			cov(f(x_p),f(x_q)) = \exp{\left( -\frac{1}{2}\lVert x_p - x_q \lVert_2^2\right)}
+		\end{equation}
+		
+		\paragraph{} It is important to understand of a covariance function implies a \emph{distribution over functions}. If given a number of input points, stored in the matrix $X_*$ and write out the corresponding covariance matrix, we actually consider a random Gaussian vector with : 
+		\begin{equation}
+			\normalDb{f_*}{0}{K(X_*,X_*)}
+		\end{equation}
+		}
+		\subsection{Prediction with noise-free observation}
+		{
+			\paragraph{} We wish not to draw random functions from the prior distribution but to incorporate the knowledge of the training point when predicting output relative to new inputs. To do this, we write down the joint prediction of the training outputs and the test outputs : 
+			\begin{equation}
+				\normalDb{\begin{bmatrix} f \\ f_* \end{bmatrix}}{0}{ \begin{bmatrix} K(X,X) & K(X,X_*) \\ K(X_*,X) & K(X_*,X_*) \end{bmatrix}}
+			\end{equation}
+			The posterior distribution would then be given by the conditional distribution over $f_*$ over $f$. 
+			\subsubsection{Reminder on joint Gaussian distribution}
+			{
+				Let $x$ be a d-dimensional vector so that 
+				\begin{equation}
+					\normalDb{x}{\mu}{\Sigma}
+				\end{equation}
+				and we partition $x$ over two subset : $x = \begin{pmatrix} x_a \\ x_b \end{pmatrix}$. Hence we have 
+				\begin{equation}
+					\mu = \begin{pmatrix} \mu_a \\ \mu_b \end{pmatrix} \quad \text{ and } \quad \begin{pmatrix} \Sigma_{aa} & \Sigma_{ba} \\ \Sigma_{ab} & \Sigma_{bb} \end{pmatrix}
+				\end{equation}
+				\paragraph{} Then a standard procedure known as \emph{completing the square} leads to the conditional distribution : 
+				\vspace{10pt}
+			
+				\coolbox{red}{\textcolor{black}{Conditional Gaussian distribution}}
+				{
+					Given the joint Gaussian distribution of $\normalDb{x}{\begin{bmatrix} \mu_a \\ \mu_b \end{bmatrix} }{ \begin{pmatrix} \Sigma_{aa} & \Sigma_{ba} \\ \Sigma_{ab} & \Sigma_{bb} \end{pmatrix} }$
+					\begin{equation}
+						\begin{aligned}
+							&\mu_{a\vert b}  = \Sigma_{ab}\Sigma_{bb}^{-1}(x_b - \mu_b) \\
+							&\Sigma_{a\vert b} = \Sigma_{aa}- \Sigma_{ab}\Sigma_{bb}^{-1}\Sigma_{ba}
+						\end{aligned}
+					\end{equation}
+				}
+			}
+			\subsubsection{Application to Gaussian process}
+			{
+				\paragraph{} The application of the latter result allows us retrieve the posterior distribution regarding $f_*$ : 
+				\vspace{10pt}
+				
+				\coolbox[2pt]{black}{Noise-free prediction with GP}
+				{
+					\begin{equation}
+						\normalDb{f_*}{K(X_*,X)K(X,X)^{-1}f}{K(X_*,X_*) - K(X_*,X)K(X,X)^{-1}K(X,X_*)}
+					\end{equation}
+				}
+			}
+		}
+		\subsection{Prediction with noisy observation}
+		{
+			\paragraph{} Let us consider that $y$ is a noisy observation of the regression function $f$ : 
+			\begin{equation}
+				y = f(x) + \varepsilon, \quad \normalDb{\varepsilon}{0}{\sigma_n^2}
+			\end{equation}
+			Assuming the noise is independent from sample to sample, we thus have that : 
+			\begin{equation}
+				\text{cov}(x_p,x_q) = k(x_p,x_q) + \sigma_n^2\delta_{p-q}, \, \forall p,q \in\mathbb{N}
+			\end{equation} 
+			so that : 
+			\begin{equation}
+				\normalDb{f}{0}{K(X,X) + \sigma_n^2I_n}
+			\end{equation}
+			Using the exact same reasoning as before we obtain the following result. 
+		
+			\vspace{10pt}	
+			\coolbox[2pt]{red}{\textcolor{black}{Prediction with noisy training-set}}
+			{
+				\begin{equation}
+					\normalDb{f_*}{\bar{f}_*}{\text{cov}(f_*)}
+				\end{equation}
+				with : 
+				\begin{equation}
+					\bar{f}_* = K(X,X_*)\left[K(X,X) + \sigma_n^2I_n\right]^{-1}f
+				\end{equation}
+				and 
+				\begin{equation}
+					\text{cov}(f_*) = K(X_*,X_*) - K(X_*,X)\left[K(X,X) + \sigma_n^2I_n\right]^{-1}K(X,X_*)
+				\end{equation}
+			}
+			
+			\paragraph{} $\blacksquare$ When we wish to compute the output for only one request, we will use the notation : 
+			\begin{equation}
+				\begin{aligned}
+					&K(X,X) = K \\
+					&K(X,X_*) = k_*
+				\end{aligned}
+			\end{equation}
+			and thus we have that 
+			\begin{equation}
+				\begin{aligned}
+					\bar{f}_* &= k_*^T\left[ K + \sigma_n^2 I_n\right]^{-1}f\\
+					              &= \sum_{i=1}^n \alpha_i k(x_*,x_i) \qquad\text{ with } \alpha = \left[ K + \sigma_n^2 I_n\right]^{-1}f
+					              \label{eq::smoother}
+				\end{aligned}
+			\end{equation} 
+			This means that the mean prediction for $f_*$ can be written as a finite linear of evaluation of the covariance function, despite the fact that the GP can be represented in terms of a possibly infinite number of basis functions. This is a manifestation of the \emph{representer theorem}. 		
+		}
+		
+		\section{Weight functions and equivalent kernels}
+		{
+			\paragraph{} It is pretty clear, given equation (\ref{eq::smoother}) that the GP procedure computes a weighted average of the noisy observations $y$ as the guess given b y decision theory (mean of the distribution) is : 
+			\begin{equation}
+				\bar{f}(x_*) = k(x_*)^T\Big[K+\sigma_n^2I_N\Big]^{-1}y
+			\end{equation}
+			This makes the Gaussian process regression a \emph{linear smoother method}. 
+			
+			\paragraph{} Let us now define the vector field $h$ by : 
+			\begin{equation}
+				h(x_*) = \Big[K+\sigma_n^2I_N\Big]^{-1}k(x_*)
+			\end{equation}
+			so that we have : 
+			\begin{equation}
+				\bar{f}(x_*) = h(x_*)^Ty
+			\end{equation}
+			giving $h$ the name of \textcolor{red}{\emph{weight function}}.
+			
+			\paragraph{} There is a clear analogy with the kernel smoothing methods. Hence the weight function also takes the name of \emph{equivalent kernel}. As a reminder, a kernel smoother is given by : 
+			\begin{equation}
+				\kappa_i(x) = \kappa\left(\frac{\vert x_i - x \vert}{l}\right)
+			\end{equation}
+			and we compute the prediction by the \textbf{Nadayara-Watson} estimator : 
+			\begin{equation}
+				f(x) = \sum_{i=1}^n \frac{\kappa_i(x)}{\sum_{j=1}^n \kappa_j(x) }y_i
+			\end{equation}
+			However, one must keep in mind that the equivalent kernel is really different from the original kernel (squared-exponential, ..). 
+		}
+		
+		\section{Incorporation of explicit basis function}
+		{
+			\paragraph{} It is common but non necessary to consider GPs with a zero mean function - remember, no loss of generality ! Yet one can decide to explicitly model a mean function for a Gaussian Process. 
+			
+			\subsection{Deterministic mean}
+			{
+				The derivation from the previous considerations is pretty straight forward. Let : 
+				\begin{equation}
+					f \sim GP\Big( m(x), k(x,x') \big)
+				\end{equation}
+				Then the prediction is made by using the following : 
+				\begin{equation}
+					\bar{f}_* = m(X_*) + K(X_*,X)\Big(K(X,X)+\sigma_n^2I_N\Big)(y-m(X))
+				\end{equation}
+				The mean function being deterministic, the posterior covariance remains the same. 
+			}
+			\subsection{Inferring the mean}
+			{
+				\paragraph{} It is actually more convenient to specify only a few-fixed basis functions (based on understanding of the underlying model for instance), which weights $\beta$ will be inferred from the data. Let us define $\beta$'s prior : 
+				\begin{equation}
+					\normalDb{\beta}{b}{B}
+				\end{equation}
+				We then obtain a new Gaussian Process : 
+				\begin{equation}
+					g(x) \sim GP( h(x)^Tb, k(x,x')+h(x)^TBh(x') )
+				\end{equation}
+			}
+			making us able to make new guesses. To infer the optimal values for $b$ and $B$, one can study the marginal likelihood of the model. 
+			
+		}
+	}
+	
+\end{document}

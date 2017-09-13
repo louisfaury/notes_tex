@@ -1,0 +1,397 @@
+%!TEX encoding = IsoLatin
+
+%% Document is article 
+\documentclass[a4paper]{article}
+
+%% ----------------------------------------------------- PACKAGES ----------------------------------------------------- %%
+\usepackage{coolArticle}
+
+%% --------------------------------------------------- COMMANDS ----------------------------------------------------- %%
+\newcommand\dl{deep learning\,}
+\newcommand\ml{machine learning\,}
+\newcommand\targets{\boldsymbol{t}}
+
+%% ---------------------------------------------------- DOCUMENT ---------------------------------------------------- %%
+\begin{document}
+
+	\titlebox{0.4}{Feed Forward Neural Networks}{Fancy Stuff in Deep Learning}
+	
+	\vhrulefill{2pt}
+	
+	\tableofcontents
+	
+	\vhrulefill{2pt}
+	
+	\section{Regularization}
+	{
+		\paragraph{} One possible definition of \emph{regularization} in machine learning is : "\emph{any modification made to a learning algorithm that is intended to reduce its generalization error but not its training error}". In machine learning in general, there exist many different strategies. In \dl almost all rely on the regularization of an estimator (in the bias-variance minimization tradeoff sense). 
+		
+		\subsection{Parameter norm penalty}
+		{
+			\paragraph{} The easiest and mostly used regularization method, even outside of \dl is parameter norm penalty. Given an objective function $J(\cdot)$ over a dataset $\{X,\targets\}$ and a parameter $\theta$, we introduce a regularized cost : 
+			\begin{equation}
+				\tilde{J}(\theta,X,\targets) = J(\theta,X,\targets) + \alpha\Omega(\theta)
+			\end{equation}
+			with $\alpha>0$ weighting the contribution of the norm-penalty term $\Omega(\cdot)$. 
+			
+			\rk{For \dl norm penalization is applied only on weights, and not on biases. Think about the penalty as the gradient norm reduction}
+			
+			\paragraph{} There exist many classical norm penalizations, widely used in \ml : 
+			\begin{itemize}
+				\item \underline{$\mathcal{L}^2$ regularization} (or Ridge or Tikhonov) : 
+					\begin{equation}
+						\begin{aligned}
+							\Omega(\theta) &= \frac{1}{2} \theta^T\theta\\
+										&= \frac{1}{2}\norm{\theta}_2^2
+						\end{aligned}
+					\end{equation}
+					The optimization algorithm will perceive the input $X$ as having higher variance (write the solution given by the normal equations when having a sum-of-squared errors objective function).
+				\item \underline{$\mathcal{L}^1$ regularization} (or LASSO) : 
+					\begin{equation}
+						\begin{aligned}
+							\Omega(\theta) &= \norm{\theta}_1 \\
+										&= \sum_{i=1}^n \vert \theta_i \vert 
+						\end{aligned}
+					\end{equation}
+				\item \underline{Direct norm constrained optimization}
+						\begin{mini}|s|[2]
+						{\theta}{J(\theta,X,\targets)}
+						{}{}
+						\addConstraint{\Omega(\theta)}{\leq k}
+					\end{mini}
+					with an hard-constraint on the parameter. 
+			\end{itemize}
+
+		}
+		\subsection{Noise robustness}
+		{
+			\paragraph{} For linear models with Gaussian noise, the addition of noise with infinitesimal variance on the input of the model is equivalent to imposing a norm penalty on the weights. 
+			
+			\paragraph{} Another possibility is to apply noise on the weights - which can be interpreted as a naive stochastic implementation of Bayesian inference. It also encourages stability. Indeed, in a regression setting, we'll optimize the weights over 
+			\begin{equation}
+				J = \E[p(x,y)]{\big(\hat{y}(x) - y\big)^2}
+			\end{equation}
+			with $\hat{y}(x)$ being the current prediction. If we include a random perturbation $\eps_W \sim \normalDb{\eps}{0}{\eta \mathds{1}}$ to the networks weights and denote $\hat{y}_{\eps_W}(x)$ the resulting perturbed prediction, the corresponding objectives now writes : 
+			\begin{equation}
+				\begin{aligned}
+					\tilde{J}_W &= \E[p(x,y,\eps_W)]{\big(\hat{y}_{\eps_W}(x) - y \big)^2} \\
+							 &= \E[p(x,y,\eps_W)]{\hat{y}_{\eps_W}(x)^2 + y^2 - 2y\hat{y}_{\eps_W}(x)}
+				\end{aligned}
+			\end{equation}
+			If $\eta \ll 1$, minimizing $\tilde{J}_W$ is therefore equivalent to minimizing $J$ with an additional regularization term : 
+			\boxedeq{red}
+			{
+				\Omega(W) = \eta \E[p(x,y)]{\norm{\nabla_W \hat{y}(x)}^2}
+			}
+			This encourages the parameters to \emph{lie in regions of parameter space where small perturbations of the weights have a relatively small influence} in the output. We are therefore looking for a minima with large, flat surrounding regions. 
+		}
+		\subsection{Early stopping}
+		{
+			\paragraph{} When training a model with sufficient representational capacity to overfit, we see a steady decrease in the training error along the learning. The test error follows that behavior until it starts increasing again : this is a good proof that the network is starting to overfit. 
+			
+			\paragraph{} One strategy known as early stopping is to store the parameters value every time an improvement on the validation set is met. We return such parameters when the training is over. This strategy has several advantages : 
+			\begin{itemize}
+				\item It is effective and simple 
+				\item It induces no changes to the initial training procedure
+				\item It allows to determine an optimal number of training steps 
+			\end{itemize}
+			It is also possible to show that it is equivalent to $\mathcal{L}^2$ regularization in a linear regression scheme. 
+		}
+		\subsection{Dropout}
+		{
+			\paragraph{} This method can be seen as making bagging (or \emph{bootstrap aggregating}) practical for ensembles of many large neural networks (which can be hard when models are very deep nets !). Dropout trains the ensemble consisting of \textcolor{red}{all subnetworks} that can be formed by removing non-output units from an underlying base network. 
+			
+			\paragraph{} Each time we load an exemple into a minibatch, we randomly sample a different binary mask to apply to all the hidden and input units in the networks (the probability, for a node, of being selected is an hyper-parameter determined by the user). We then run forward-propagation, back-propagation and the learning update using the newly obtained topology. 
+			
+			\paragraph{} More formally, let $\mu$ be a mask specifying which units to include and $J(\theta,\mu)$ defining the cost of the model defined by parameter $\theta$ and mask $\mu$. We wish to minimize the joint-distribution expectation : 
+			\begin{equation}
+				\E[\mu]{J(\theta,\mu)}
+			\end{equation}
+			by sampling values of $\mu$ from its specified distribution. 
+			 Now, if we were to make a prediction, we would accumulate votes from all member, and therefore compute : 
+			 \begin{equation}
+			 	\hat{y}_\infty(x) = \sum_u p(\mu) \E{y\vert \mu,x}
+			 \end{equation}
+			 Because this involves summing over $2^d$ possibilities (where $d$ are the number of units that can be dropped), it is of course intractable. A key insight involved in dropout is that we can approximate the committees vote by evaluating $\condp{y}{x}$ in one model : the one with \emph{all-units}, but with the weights going out of unit $i$ multiplied by the probability of including unit $i$. Usually, dropout is performed with a uniform inclusion probability of $1/2$. Then, we simply have to half all the weights before making predictions. 
+			 
+			\rk{This rule is actually exact for many classes of model that don't have non-linear activation functions.}
+		}
+		\subsection{Others}
+		{
+			\paragraph{} There exist of course many other regularization strategies for deep neural networks (direct bagging, weight-sharing, dataset augmentation ..) that we don't describe here. 
+		}
+	}
+	\section{Optimization}
+	{
+		\paragraph{} It is important to understand how learning differs from pure optimization. In most machine learning scenarios, we are interested in reducing some quantity $P(\cdot)$ defined with respect to the test set. We are only able to do so indirectly : we reduce a training error $J(\cdot)$, hoping to improve $P(\cdot)$. Indeed - be it in supervised or unsupervised learning - we would like to optimzie the mean of the loss-function over the real data-generating distribution $p_{data}$ : 
+		\begin{equation}
+			J^*(\theta) = \underbrace{\E[(x,y)\sim p_{data}]{L(f(x,\theta),y)}}_{\text{risk}}
+		\end{equation}
+		however that distribution is unknown ! We therefore minimize an \textcolor{red}{\emph{empirical risk}} : 
+		\begin{equation}
+			\begin{aligned}
+				J(\theta) &= \E[(x,y)\sim \tilde{p}_{data}]{L(f(x,\theta),y)} \\
+					      &= \frac{1}{N}\sum_{n=1}^N L(f(x^{(n)},\theta),y^{(n)})
+			\end{aligned}
+		\end{equation} 
+		which is prone to overfitting ! This is mainly why we use regularization techniques. 
+		
+		\subsection{Minibatch optimization}
+		{
+			\paragraph{} Minibatch optimization is a good exemple of how learning differs from pure optimization. When we assume indepedence between samples, the likelihood takes up a factorial form : 
+			\begin{equation}
+				\mathcal{L}\left(\targets\vert X,\theta\right) = \prod_{n=1}^N \mathcal{L}(t^{(n)}\vert x^{(n)},\theta)
+			\end{equation}
+			which leads to a summative expression of the gradient of the log-likelihood : 
+			\begin{equation}
+				\nabla_\theta\left\{ \log{\mathcal{L}\left(\targets\vert X,\theta\right)}\right\} = \nabla_\theta \left\{ \sum_{n=1}^N \log{\mathcal{L}\left(t^{(n)}\vert x^{(n)},\theta\right)}\right\}
+			\end{equation}
+			Therefore, if we omit a few terms, we are given a good approximation of the gradient : 
+			\begin{equation}
+				\nabla_\theta\left\{ \log{\mathcal{L}\left(\targets\vert X,\theta\right)}\right\} = \nabla_\theta \left\{ \sum_{n=1}^M \log{\mathcal{L}\left(\tilde{t}^{(n)}\vert \tilde{x}^{(n)},\theta\right)}\right\}
+			\end{equation}
+			where $M\leq N$ and the couples $\left(\tilde{x}^{(n)},\tilde{t}^{(n)}\right)$ are independently drawn from the training set. This reduced set is known as a \emph{\textcolor{red}{mini-batch}}. Its extreme cases are known as \emph{on-line} learning ($M=1$) and batch learning ($M=N$). 
+			
+			\paragraph{} Mini-batches size are generally driven by the following factors : 
+			\begin{itemize}
+				\item Larger batches provide a more accurate estimate of the gradient, but with less than linear return (remember that the variance varies with $\sqrt{M}$). 
+				\item The use of multicore architecture or parallel optimization schemes set a proper reasoning rule of thumb for choosing a batch size. 
+				\item Small batches can have a regularizing effect (but need smaller learning rates because of the gradient's estimate variance - and hence require more learning steps)
+			\end{itemize}
+			
+			\rk{It is crucial that the samples are independent in order to reduce the bias of the gradient's estimate. A good rule of thumb is to proceed to a random shuffle of the dataset if some sequences were to be correlated (same measure,..)}
+		}
+		\subsection{Challenges in neural network optimization}
+		{
+			\paragraph{} Deep neural network training often involves optimizing a non-convex objective. It shares many of the convex optimization challenges, and some additional ones : 
+			\begin{itemize}
+				\item \underline{Ill-conditioning} : $g^THg  \gg g^Tg$ or strong curvature near a local minima 
+				\item \underline{Local minima} : especially in \dl there is a local minima problem, because of the \emph{model identifiability problem} (weight space symmetry - although this lead to equivalent local minima). 
+				\item \underline{Others} : Plateaus, saddle points, flat regions, cliffs and exploding gradients. 
+			\end{itemize}
+		}
+		\subsection{Basic algorithms}
+		{
+			\subsubsection{Stochastic gradient descent}
+			{
+				\paragraph{} Stochastic gradient descent - as we described it earlier - and its variance are probably the most used optimization algorithms for machine learning in general, and for deep-learning in particular. 
+				
+				\rk{As a reminder, it is possible to obtain an unbiased estimate of the gradient by taking the average gradient on a mini-batch of i.i.d samples.}
+				
+				\paragraph{} Because of the noise inherent to the SGD procedure that does not vanish even at a local minimum, the learning rate must comply with the stochastic optimization conditions \eqref{eq::stopt} :
+				\boxedeq{red}
+				{
+					\label{eq::stopt}
+					\begin{aligned}
+						\sum_{k=0}^\infty \eps_k = +\infty \\
+						\sum_{k=0}^\infty \eps_k^2 < +\infty
+					\end{aligned}
+				}
+				for instance, with 
+				\begin{equation}
+					\eps_k = \frac{\alpha_0}{k^\beta}, \quad \beta > 0.5
+				\end{equation}
+				In practice, we commonly use : 
+				\begin{equation}
+					\eps_k = (1-\alpha_k)\eps_0 + \alpha_k \eps_\tau \text{ with } \alpha_k = \frac{k}{\tau}
+				\end{equation}
+				and keep $\eps_k = \eps_\tau\, \forall k\geq \tau$. 
+			}
+			\subsubsection{Momentum}
+			{
+				\paragraph{} This method is designed to accelerate the learning process, especially in the case of high curvatures, small but consistent gradients or noisy gradients. It accumulates an exponentially decaying average of past gradients and continues to move in their directions. 
+				
+				\paragraph{} Formally, with $\alpha\in[0,1[$, the update rule writes : 
+				\boxedeq{red}
+				{
+					\begin{aligned}
+						&v \leftarrow \alpha v - \eps \cdot \nabla_\theta\left( \frac{1}{M}\sum_{m=1}^M L(f(x^{(m)},\theta),y^{(m)})\right) \\
+						&\theta \leftarrow \theta + v 
+					\end{aligned}
+				}
+				with $v$ initially set to $0$. One possible use of the momentum method writes : 
+				\vspace{10pt}
+			
+				\algo{SGD with momentum}
+				{
+						 \KwIn{Learning rate $\eps$, momentum parameter $\alpha$}
+						 \KwIn{Initial $\theta_0$, initial velocity $v_0$}
+						 \While{stopping criterion is not met}
+						 {
+						 	Sample mini-batch of size $M$ : $\{X^{(M)},y^{(M)}\}$ \;
+							Compute gradient estimate\;
+							$$
+								g \leftarrow \nabla_\theta\left( \frac{1}{M}\sum_{m=1}^M L(f(x^{(m)},\theta),y^{(m)})\right)
+							$$
+							Update velocity \;
+							$$
+								v \leftarrow \alpha v - \eps g
+							$$
+							Update parameter \;
+							$$
+								\theta \leftarrow \theta + v 
+							$$
+						 }					
+				}
+				
+				\paragraph{} The size of the step now depends on how large and how aligned a sequence of gradients are. In the extreme case where the momentum algorithm always sees the same gradient $g$, the size of the step converges to 
+							\begin{equation}
+								v_\infty = \frac{\eps \norm{g}}{1-\alpha}
+							\end{equation}
+							Typically, the momentum accelerates the maximum speed by a factor $\frac{1}{1-\alpha}$. $\alpha$ can also be tuned along the learning (set near $0$ and then grow for instance). 
+			}
+			\subsubsection{Nesterov momentum}
+			{
+				\paragraph{} This method is inspired by Nesterov accelerated gradient method. The update rule now writes : 
+				\boxedeq{red}
+				{
+					\begin{aligned}
+						&\theta' \leftarrow \theta + \alpha v \\
+						&v \leftarrow \alpha v - \eps \cdot \nabla_\theta\left( \frac{1}{M}\sum_{m=1}^M L(f(x^{(m)},\color{red}{\boldsymbol{\theta}'}\color{black}),y^{(m)})\right) \\
+						&\theta \leftarrow \theta + v 
+					\end{aligned}
+				}
+				The gradient is now evaluated after the current velocity is applied, in an attempt to add a correction factor. 
+				
+				\algo{SGD with Nesterov momentum}
+				{
+					\KwIn{Learning rate $\eps$, momentum parameter $\alpha$}
+						 \KwIn{Initial $\theta_0$, initial velocity $v_0$}
+						 \While{stopping criterion is not met}
+						 {
+						 	Sample mini-batch of size $M$ : $\{X^{(M)},y^{(M)}\}$ \;
+							Apply interim update\;
+							$$
+								\theta ' = \theta + \alpha v
+							$$
+							Compute gradient estimate\;
+							$$
+								g \leftarrow \nabla_\theta\left( \frac{1}{M}\sum_{m=1}^M L(f(x^{(m)},\theta'),y^{(m)})\right)
+							$$
+							Update velocity \;
+							$$
+								v \leftarrow \alpha v - \eps g
+							$$
+							Update parameter \;
+							$$
+								\theta \leftarrow \theta + v 
+							$$
+						 }					
+				}
+				\paragraph{} In the convex batch gradient case, Nesterov momentum brings the rate of convergence of the excess error from $O(\frac{1}{k})$ to $O(\frac{1}{k^2})$. 
+			}
+		}
+		\subsection{Parameter initialization strategies}
+		{
+			\paragraph{} Such strategies are by nature simple and heuristic and are based on achieving nice properties when the network is initialized. 
+			
+			\rk{Such properties might not be kept during the optimization process. What's more, the understanding on how the initial point affects the generalization skills of a neural network is extremely primitive.}
+			
+			\paragraph{} However, one rule is certain : the initial parameters need to break symmetry between different units. This namely motivate \textcolor{red}{random initialization} of the weights. Still, comes the questions of range - we neither want a fading nor exploding process during forward propagation. Closer to the regularization issue, we could think of a Gaussian initialization of hte weight as a naive way to enforce a Gaussian prior $\condp{\theta}{\theta_0,\sigma^2} = \normalDb{\theta}{\theta_0}{\sigma^2\mathds{1}}$. Hence there exist many diferent optimization strategies : 
+			\begin{itemize}
+				\item Normalized initialisation 
+					\begin{equation}
+						W \sim \mathds{U}\left(-\sqrt{\frac{6}{m+n}},-\sqrt{\frac{6}{m+n}}\right)
+					\end{equation}
+				\item Scaling initialization 
+				\item Sparse initialization 
+				\item $\hdots$
+			\end{itemize}
+		}
+		\subsection{Adaptative learning rates algorithms}
+		{
+			\paragraph{} The learning is one of the most difficult parameters to set-up. The objective function we are trying to optimize is often highly sensitive to some directions end insensitive to others. The momentum algorithm can mitigate these issues, but doe so at the expense of introducing another hyper-parameter. Also, line-search algorithms can only be applied to full-batch optimization, and often come at the cost of computational burdens. In the following, we review a few number of mini-batch based methods that perform learning rate adaptation. 
+			
+			\subsubsection{AdaGrad}
+			{
+				\paragraph{} This algorithm individually adapts the learning rate of all model parameters by scaling them inversely proportional to the square root of the sum of all the historical squared values of the gradient. Therefore, the parameters with the largest partial derivatives of the loss have a rapid decrease in their learning rate. 
+				\vspace{5pt}
+				
+				\algo{AdaGrad with SGD}
+				{
+					\KwIn{Learning rate $\eps$, initial parameter $\theta$, small constant $\delta(\sim 10^{-7})$}
+					Initialize $r=0$\;
+					\While{stopping criterion is not met}
+					{
+						Sample minibatch\; 
+						Compute gradient $g$ and the accumulated squared gradient $r\leftarrow r + g\odot g$\;
+						Compute update $\Delta\theta \leftarrow -\frac{\eps}{\delta + \sqrt{r}}\odot g$\;
+						Update parameter $\theta \leftarrow \theta + \Delta \theta$\;
+					}
+				}
+				
+				\rk{ In the context of convex optimization, AdaGrad enjoyrs some desirable theoretical properties. Empirically, the accumulation of squared gradients from the beginning of the training can result in a premature decrease in the effective learning rate. }
+			}
+			\subsubsection{RMSProp}
+			{	
+				\paragraph{} The idea behind RMSPropr is to modify AdaGrad in a non-convex setting by changing the gradient accumulation into an exponentially moving average. Therefore, we discard history from the extreme past so that the optimization procedure can rapidly converge after finding a convex bowl. 
+				\vspace{7pt}
+				
+				\algo{RMSProp with Nesterov momentum}
+				{
+					\KwIn{Learning rate $\eps$, initial parameter $\theta$, decay rate $\rho$, initial velocity, small constant $\delta(\sim 10^{-7})$}
+					Initialize $r\leftarrow 0$\;
+					\While{stopping criterion is not met}
+					{
+						Sample minibatch\;
+						Compute interim update $\theta' = \theta + \alpha v$\;
+						Compute gradient $g\leftarrow \nabla_\theta\left( \frac{1}{M}\sum_{m=1}^M L(f(x^{(m)},\theta'),y^{(m)})\right)$\;
+						Accumulate gradient $r\leftarrow \rho r + (1-\rho)g\odot g$\;
+						Compute velocity update $v\leftarrow \alpha v - \frac{\eps}{\delta + \sqrt{r}}\odot g$\;
+						Apply update $\theta \leftarrow \theta + v$\;
+					}
+				}
+				
+				\paragraph{} The hyper-parameter $\rho$ controls the length scale of the moving average. Empirically, RMSProp has been shown to be an effective an practical optimization algorithm for deep neural networks - and is currently one of the go-to optimization algorithm by \dl practitioners.  
+			}
+			
+			\subsubsection{Adam}
+			{
+				\paragraph{} This name stands for "\emph{Adaptative Moments}". It is best seen as a RMSProp algorithm with a momentum variant, which is incorporated directly as an estimate of the first order moment of the gradient. 
+				\vspace{5pt}
+				
+				\algo{RMSProp with Nesterov momentum}
+				{
+					\KwIn{Learning rate $\eps$, initial parameter $\theta$, exponential decay rate s$\rho_1$ and $\rho_2$, initial velocity, small constant $\delta(\sim 10^{-7})$}
+					Initialize $r\leftarrow 0$\;
+					\While{stopping criterion is not met}
+					{
+						Sample minibatch\;
+						$t\leftarrow t +1$\;
+						Compute interim update $\theta' = \theta + \alpha v$\;
+						Compute gradient $g\leftarrow \nabla_\theta\left( \frac{1}{M}\sum_{m=1}^M L(f(x^{(m)},\theta'),y^{(m)})\right)$\;
+						Update biased first moment estimate $s \leftarrow \rho_1 s + (1-\rho_1)g$\;
+						Update biased second moment estimate $r \leftarrow \rho_1 r + (1-\rho_1)g\odot g$\;
+						Correct bias first moment : $\hat{s} \leftarrow \frac{s}{1-\rho_1^t}$\;
+						Correct bias first moment : $\hat{r} \leftarrow \frac{r}{1-\rho_1^t}$\;
+						Compute update : $\Delta\theta \leftarrow -\eps\frac{\hat{s}}{\delta + \sqrt{\hat{r}}}$ (component-wise)\;
+						Apply update : $\theta \leftarrow \theta + \Delta \theta$
+					}
+				}
+			}
+		}
+		\subsection{Approximate second order methods}
+		{		
+			\paragraph{} What we previously saw are first order methods (steepest-descent like) with adaptative learning rates. Provided the Hessian of the function function at $\theta_k$, denoted $H_k$, one second order optimization scheme is the Newton descend : 
+			\begin{equation}
+				\theta_{k+1} = -H_{k}^{-1}\nabla_\theta J(\theta)\vert_{\theta_k}
+			\end{equation}
+			This descent direction is based on a locally quadratic approximation of the objective function. In \dl the objective function is typically non-convex (saddle points) meaning that often : 
+			\begin{equation}
+				\exists \theta \in \Theta, \, H_k = \nabla_{\theta}^2 J(\theta) \notin \mathcal{S}_{n}^{++}(\mathbb{R})
+			\end{equation}
+			leading the update in the wrong direction. 
+			
+			\paragraph{} To avoid this phenomenon, one can use a regularized update, known as the \textcolor{red}{Levenberg-Marquardt} update : 
+			\begin{equation}
+				-\left(H_{k}+ \alpha \mathds{1}\right)^{-1}\nabla_\theta J(\theta)\vert_{\theta_k}, \quad \alpha >0
+			\end{equation}
+			which is actually a mix between Newton and gradient descent. 
+			
+			\paragraph{} As in many optimization practical cases, and particularly in \dl one cannot afford to compute and invert the Hessian at every step. \emph{Quasi-Newton} methods are designed to reduce the related computational burden by keeping an estimate of $H_k$ or directly $H_{k-1}$ along the learning. One such method is known as BFGS, and update $M_t$, an approximation of $H^{-1}$ by adding low-rank matrixes along the optimization process. 
+			
+			\paragraph{} However, the stockage of $M_t$ is $O(n^2)$ in memory, making it impractical for most modern \dl models. The L-BFGS (Low-Memory BFGS) answer this problem by assume $M_{t-1}$ to be the identity matrix (of course, there exist many more sophisticated variants). 
+		}
+	}
+	
+\end{document}

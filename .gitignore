@@ -1,0 +1,8 @@
+optimisation/books
+optimisation/notes/*
+!optimisation/notes/*.tex
+!optimisation/notes/*.pdf
+machine_learning/books
+machine_learning/notes/*
+!machine_learning/notes/*.tex
+!machine_learning/notes/*.pdf

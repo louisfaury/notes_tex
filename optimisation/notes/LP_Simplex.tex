@@ -1,0 +1,528 @@
+%!TEX encoding = IsoLatin
+
+%% Document is article 
+\documentclass[a4paper]{article}
+
+%% ----------------------------------------------------- PACKAGES ----------------------------------------------------- %%
+\usepackage{coolArticle}
+\usepackage{algorithm2e}
+\newcommand\reflp{\eqref{eq::standard_lp}}
+
+%% ---------------------------------------------------- DOCUMENT ---------------------------------------------------- %%
+\begin{document}
+
+	\titlebox{0.6}{Constrained Optimization}{Linear Programming - The Simplex Algorithm}
+	
+		
+	\vhrulefill{2pt}
+	
+	\tableofcontents
+	
+	\vhrulefill{2pt}
+
+
+	\section{Linear Programming}
+	{
+		\paragraph{} We'll consider here a rather easy optimization program - that is a linear objective function with linear constraints. Therefore, the feasible set is a \emph{polytope}, and the contours of the objective function are planar. However, we might encounter some misspecified cases : the problem can be infeasible or unbounded. 
+		
+		\subsection{Standard form}
+		{
+			\paragraph{} The standard linear program writes under the following form : 
+			\vspace{5pt}
+			
+			\coolbox{white}{}
+			{
+				\vspace{-10pt}
+					\begin{mini}|s|[2]
+						{x}{c^Tx}
+						{\label{eq::standard_lp}}{}
+						\addConstraint{x}{\geq 0}
+						\addConstraint{Ax}{=b}			
+					\end{mini}
+			}
+			\vspace{5pt}
+			
+			\noindent where : 
+			$$
+				\left\{
+				\begin{aligned}
+					&c,\, x \in \mathbb{R}^n \\
+					&A \in \mathcal{M}_{m,n}(\mathbb{R}) \\
+					&b \in \mathbb{R}^m
+				\end{aligned}\right.
+			$$
+			\vspace{5pt}
+			
+			\begin{leftbar}
+				\noindent \sffamily 
+				\textbf{Remark} : This form is achievable for every linear program, thanks to the use of \emph{slack variables}. For instance, let us consider the program : 
+				\begin{mini}|s|[2]
+					{x}{c^Tx}
+					{\label{eq::to_standard_ex}}{}
+					\addConstraint{Ax}{\leq b}
+				\end{mini}
+				Let us introduce a slack variable $z = Ax-b\geq0$. We'll also use the notations : 
+				$$
+					\begin{aligned}
+						&x^+ = \max{(x,0)} \\
+						&x^- = \max{(-x,0)}
+					\end{aligned}
+				$$
+					so that $x = x^+ - x^-$. \\
+					Therefore the problem \eqref{eq::to_standard_ex} is equivalent to : 
+			\begin{mini}|s|[2]
+				{x}{\begin{pmatrix} c &c &0 \end{pmatrix} \begin{pmatrix} x^+ & x^- &z\end{pmatrix}^T}
+				{}{}
+				\addConstraint{\begin{pmatrix} A &-A &I \end{pmatrix}\begin{pmatrix} x^+ \\ x^- \\ z\end{pmatrix}}{=b}
+				\addConstraint{x^+,x^-,z}{\geq 0}
+			\end{mini}
+			which is the standard form. \\
+			By a similar reasoning, one can transform any linear programing problem into an equivalent one, under the standard form \eqref{eq::standard_lp}.
+			\end{leftbar}
+			
+			\paragraph{} In all that follows, we'll assume that $m\leq n$, to avoid degenerate cases (infeasible, unique feasible point, etc). 
+		}
+		
+		\subsection{Optimality and duality}
+		{
+			\subsubsection{Optimality}
+			{
+				\paragraph{} Optimality conditions for \reflp{} can be obtained from the KKT. We'll define : 
+				$$
+					\left\{
+					\begin{aligned}
+						&\lambda \in \mathbb{R}^m  &\text{the Lagrange multiplier for the equality constraint}\\
+						&s\in\mathbb{R}^n &\text{the Lagrange multiplier for the inequality constraint}
+					\end{aligned}\right.
+				$$
+				Therefore the Lagrangian of \reflp{} writes : 
+				\begin{equation}
+					\mathcal{L}(x,\lambda,s) = c^Tx - \lambda^T(Ax-b) -s^Tx 
+				\end{equation}
+				and the first order necessary conditions writes that for an optimal feasible point $x$, $\exists (\lambda,s)$ such that : 
+				\begin{subequations}
+					\label{eq::primal_kkt}
+					\begin{align}
+						&c = A^T \lambda +s \label{eq::dLdx}\\
+						&Ax = b\label{eq:dLdl} \\
+						& x\geq 0 \\
+						& s \geq 0 \\
+						& x^Ts = 0 \label{eq::complementarity} 
+					\end{align}
+				\end{subequations}
+				
+				\paragraph{} Now let $(x^*,\lambda^*,s^*)$ a triple that satisfy such equations. Therefore we have that : 
+				$$ 
+					\begin{aligned}
+						c^Tx^* &= \lambda^{*T} Ax^* + s^{*T} x^* \\
+							&= b^T\lambda^*			
+					\end{aligned}
+				$$
+				We'll see later that $\lambda \to \lambda^Tb$ is actually the objective of the dual problem. More importantly, we can actually show the following theorem. 
+				\vspace{10pt}
+				
+				\coolbox[1pt]{white}{\textcolor{black}{Sufficient optimality conditions}}
+				{
+					The KKT first-order necessary conditions \eqref{eq::primal_kkt} are sufficient optimality conditions.
+				}
+				\vspace{3pt}
+				\begin{leftbar}
+					\noindent\textbf{\textsc{Proof}} : 
+					\textit{ Let $\bar{x}$ be a feasible point, hence such that 
+					$$
+						\begin{aligned}
+							&A\bar{x} = b \\
+							&\bar{x}\geq 0
+						\end{aligned}
+					$$
+					Therefore 
+					$$
+						\begin{aligned}
+							c^T\bar{x} &= (\lambda^T A+s^T)\bar{x}\\
+									 &= \lambda^{*T} b + s^{*T}\bar{x} \\
+									 &\geq c^Tx^*
+						\end{aligned}
+					$$
+					with equality only if the complementary condition \eqref{eq::complementarity} holds. This therefore means that no feasible point has a lower objective than $x^*$. The necessary KKT conditions are therefore sufficient conditions.
+					}
+				\end{leftbar}
+			}
+			\subsubsection{Duality}
+			{
+				\paragraph{} Let us define the dual problem : \\
+				\coolbox{white}{}
+				{
+					\vspace{-10pt}
+					\begin{maxi}|s|[2]
+						{\lambda}{b^T\lambda}
+						{\label{eq::dual_lp}}{}
+						\addConstraint{A^T\lambda}{\leq c}			
+					\end{maxi}
+				}
+				\vspace{5pt}
+				
+				\noindent for which the corresponding Lagrangian writes : 
+				\begin{equation}
+					\bar{\mathcal{L}}(\lambda,x) = b^T\lambda  -x^T(A^T\lambda -c )
+				\end{equation}
+				The corresponding KKT equations are : 
+				\begin{subequations}
+					\label{eq::dual_kkt}
+					\begin{align}
+						&Ax = b \\
+						&A^T\lambda \leq c \\
+						& x\geq 0 \\
+						& x^T(c-A^T\lambda) = 0
+					\end{align}
+				\end{subequations}
+				which are exactly the same conditions \eqref{eq::primal_kkt} as for the primal problem ! Also, as we did for the primal problem, we can show that those are also sufficient optimality conditions. 		
+				
+				\paragraph{} The \emph{\textcolor{red}{weak duality}} results tells us that for a given feasible vector $x$ for the primal problem, and a feasible vector $\lambda$ for the dual, we have an inequality control over the respective objective functions : 
+				\begin{equation}
+					c^T x \geq b^T \lambda 
+				\end{equation}
+				making the dual objective function a lower bound for the primal objective : 
+				\begin{equation}
+					\min_{x\in\Omega_1} c^Tx \geq \max_{\lambda\in\Omega_2} b^T\lambda 
+				\end{equation}
+				The equality between the two objective function we derived lead us to formulate the \emph{\textcolor{red}{strong duality}} theorem.
+				\vspace{10pt}
+				
+				\coolbox[1pt]{white}{\textcolor{red}{Strong Duality}}
+				{
+					\begin{itemize}
+						\item If either \eqref{eq::standard_lp} or \eqref{eq::dual_lp} has a finite solution, then so does the other, and the objective values at the respective solutions are equal. 
+						\item If either \eqref{eq::standard_lp} or \eqref{eq::dual_lp} is unbounded, then the other is unfeasible. 
+					\end{itemize}
+				}
+				\vspace{10pt}
+				\begin{leftbar}
+					\noindent\textbf{\textsc{Proof}} :\newline
+					\emph{$\bullet$ Since both KKT conditions are equivalent and sufficient conditions, we have the equivalence between the existence of a solution for one problem and the other.
+					\newline 
+					$\bullet$ Let us suppose that the primal problem is unbounded : therefore $\exists\{x_k\}_{k\in\mathbb{N}}$ so that 
+					$$
+						\begin{aligned}
+							&c^Tx_k \to -\infty && \\
+							&Ax_k = b, &&\quad \forall k\in\mathbb{N} \\
+							& x_k \geq 0, &&\quad \forall k\in\mathbb{N}
+						\end{aligned}	
+					$$
+					Now, if the dual is feasible we can find $\bar{\lambda}$ such that $A^T\bar{\lambda} \leq c$ and therefore $\forall k \in\mathbb{N}$ : 
+					$$
+						\begin{aligned}
+							&\bar{\lambda}^T(Ax_k) \leq c^Tx_k  \text{ so } \\
+							&b^T\bar{\lambda} \leq c^Tx_k
+						\end{aligned}
+					$$
+					This inequality holding for all $k$, we therefore have that 
+					$$
+						b^T \bar{\lambda} < -\infty
+					$$
+					which is impossible. The dual must therefore be unfeasible ! A similar reasoning can be applied for the other side of the equivalence. 
+					}
+				\end{leftbar}
+				
+				
+			}
+		}
+		\subsection{Geometry of the feasible set}
+		{
+			\subsubsection{Basic feasible points}
+			{
+			\paragraph{} We assume in all that follows that $A$ has \textbf{full row-rank}, and introduce the notion of basic feasible points. 
+			\vspace{10pt}
+			
+			\coolbox{white}{\textcolor{black}{Basic feasible point}}
+			{
+				A vector $x$ is said to be a basic feasible point of \eqref{eq::standard_lp} if it is feasible and if there exists a subset $\mathcal{B}$ of the index set $\{1,\hdots,n\}$ so that : 
+				\begin{itemize}
+					\item $\mathcal{B}$ contains exactly $m$ indices. 
+					\item $i\notin \mathcal{B} \Rightarrow x_i = 0$
+					\item The $m\times m$ matrix $B$ defined as a collection of $A$'s columns : 
+					$$
+						B = [A_i]_{i\in\mathcal{B}}
+					$$
+					is non-singular.  
+				\end{itemize}
+			}
+			\vspace{5pt}
+			
+			\noindent$\mathcal{B}$ is called the basis of the primal problem. 
+				
+				\paragraph{} As we'll see, the simplex's strategy is to examine only such points, which leads to the optimum if and only if such points exists and if the optimal is a basic feasible point. Such an assumption is true - under certain conditions - as the following theorem indicates. 
+				\vspace{10pt}
+				
+				\coolbox{white}{\textcolor{red}{Fundamental theorem of linear programming}}
+				{
+					\begin{itemize}
+						\item[(i)] If \reflp{} has a non-empty feasible region, then there is at least one basic feasible point. 
+						\item[(ii)] If \reflp{} has solutions, then at least one of them is a basic optimal point. 
+						\item[(iii)] If \reflp{} is feasible and bounded, it has an optimal solution. 
+					\end{itemize}
+				}			 
+				\vspace{10pt}
+				
+				\begin{leftbar}
+					\noindent\textbf{\textsc{Proof}} :\newline
+					\emph{(i) : Among all feasible vector $x$, let us choose the one with the minimal number of non-zero components. Without loss of generality, we'll note that number $p$ and write down : 
+					\begin{equation}
+						x = \begin{pmatrix} x_1 & x_2 & \hdots & x_p & 0 & \hdots & 0 \end{pmatrix}^T
+					\end{equation}
+					Hence we'll have that : 
+					\begin{equation}
+						\sum_{i=1}^p A_i x_i = b
+						\label{eq::xfeas}
+					\end{equation}
+					If we assume that $(A_1,\hdots, A_p)$ is linearly dependent, therefore we'll have that there exists $(z_i)_{i\in\{1,\hdots,p-1\}}$ such that : 
+					\begin{equation}
+						A_p = \sum_{i=1}^{p-1}z_i A_i 
+						\label{eq::A_dep}
+					\end{equation}
+					If we now introduce, for some $\eps>0$ :  
+					\begin{equation}
+							x(\eps) = x + \eps \begin{pmatrix} z_1 & \hdots & z_{p-1} & -1 & 0 & &\hdots & 0\end{pmatrix} ^T
+					\end{equation}
+					we have thanks to \eqref{eq::xfeas} and \eqref{eq::A_dep} that $x(\eps)$ is a feasible point :
+					$$
+						\begin{aligned}
+							&Ax(\eps) = b &&\forall{\eps}\in\mathbb{R} \\
+							&x(\eps)\geq 0 && \text{for } \eps \text{ small enough}
+						\end{aligned}
+					$$
+					From the definition of $x(\eps)$ we know that $\exists \bar{\eps}$ such that for it exists $i\in\{1,\hdots,p\}$ so that 
+					$$
+						x_i(\bar{\eps}) = 0
+					$$
+					Or the vector $x(\bar{\eps})$ is feasible and as therefore a maximum of $(p-1)$ non-zero components, which contradicts our initial hypothesis. Therefore we know that \textbf{$(A_1,\hdots, A_p)$ is linearly independent}. \newline
+					This said, we have that $p\leq m$. If $p=m$ the vector $x$ is a feasible point. On the other hand, if $p<m$, because $A$ has full row rank we know that we can choose $m-p$ independent column from $A_{p+1}, \hdots, A_n$ and add their indexes to $\mathcal{B}$. This provides the existence of a basic feasible point. 
+					}
+				\end{leftbar}
+			}
+			\subsubsection{Vertices of the feasible polytope}
+			{
+				\paragraph{} The feasible set defined by the linear constraints is a polytope, which is fully defined by its set of vertex (it aligns with its convex hull)
+				$$
+					\mathcal{V}=\{v_1,\hdots,v_n\}
+				$$
+				The $\{v_i\}$'s are visually recognizable. More importantly, algebraically speaking, they are the basic points that we were discussing earlier !
+				\vspace{10pt}
+				
+				\coolbox{white}{\textcolor{red}{Theorem}}
+				{
+					All basic feasible points of 
+					\begin{mini}|s|[2]
+					{x}{c^Tx}
+					{}{}
+					\addConstraint{Ax}{=b}
+					\addConstraint{x}{\geq 0}
+					\end{mini}
+					are vertices of the feasible polytope 
+					\begin{equation}
+						\left\{x\in\mathbb{R}^n \, \vert \, Ax=b, \, x\geq 0 \right\}
+					\end{equation}
+					and vice-versa. 
+				}
+				
+					\begin{leftbar}
+					\noindent\textbf{\textsc{Proof}} : \emph{Let $x$ be a basic feasible point. We'll note $\mathcal{B} = \{1,\hdots, m\}$ its basis without loss of generalization. Since 
+					$$
+						x_{m+1} = \hdots = x_n = 0
+					$$
+					if we assume that $\exists \alpha >0$ and $y, \, z$ two feasible vectors such that 
+					$$
+						x = \alpha y + (1-\alpha) z 
+					$$
+					we will have that : 
+					$$
+						\begin{aligned}
+							&y_{m+1} = \hdots = y_n = 0 \\
+							&z_{m+1} = \hdots = z_n = 0
+						\end{aligned}
+					$$
+					Therefore we have that $Ax = Ay = Az = b$ and that by noting, for any vector $x$, $x_\mathcal{B} = (x_1,\hdots,x_m)$ : 
+					$$
+						Bx_\mathcal{B} = By_\mathcal{B} = Bz_\mathcal{B} 
+					$$
+					However, $B$ being non-singular, this implies that $x=y=z$. Therefore, we have that $x$ is a vertex of the feasible polytope. The second implication relies on a similar reasoning that the one hold during the last proof. 
+					}
+				\end{leftbar}
+				
+			}
+		}
+	}
+	
+	\section{The simplex algorithm}
+	{
+		\paragraph{} There exists a great deal of variant method to the simplex algorithm. In what follows, we present the \emph{revised simplex method}. 
+		\subsection{Intuition}
+		{
+			\paragraph{} As said earlier, all iterates of the simplex are basic feasible points of \reflp, and therefore vertices of the feasible polytope. Most of the step of the simplex algorithm consist in moving from one vertex to another - an adjacent vertex, for which the basis differs in exactly one component. 
+			
+			\paragraph{} The major issue in this approach is to know which of the index to remove from $\mathcal{B}$. Let us define $\mathcal{N}$ the complementary set of $\mathcal{B}$ and $N$ equivalently to $B$ : 
+			$$
+				N = [A_i]_{i\in\mathcal{N}}	
+			$$
+			Let us also partition $x\, c$ and $s$ according to those sets- for instance : 
+			$$
+				x_\mathcal{B} = (x_i)_{i\in\mathcal{B}}\qquad x_\mathcal{N} = (x_i)_{i\in\mathcal{N}}
+			$$
+			From the KKT conditions, well have that 
+			\begin{equation}
+				Ax = Bx_\mathcal{B} + Nx_\mathcal{N} = b
+			\end{equation}
+			where and hence : 
+			\begin{equation}
+				\left\{
+				\begin{aligned}
+					&x_\mathcal{B} = B^{-1}b\\	
+					&x_\mathcal{N} = 0
+				\end{aligned}\right.
+			\end{equation}
+			We can now choose $s_\mathcal{B}$ to comply with the complementary conditions by setting : 
+			\begin{equation}
+				s_\mathcal{B} = 0
+			\end{equation}
+			We find $c$ and $s_N$ by partitioning the first KKT conditions : 
+			\begin{equation}
+				\left\{
+					\begin{aligned}
+						&B^T\lambda = c_\mathcal{B} \\
+						&N^T\lambda + s_\mathcal{N} = c_\mathcal{N}
+					\end{aligned}
+				\right.
+			\end{equation}
+			which eventually leads to : 
+			\begin{equation}
+				s_\mathcal{N} = c_\mathcal{N} - (B^{-1}N)^Tc_\mathcal{B}
+				\label{eq::sn}
+			\end{equation}	
+			
+			\paragraph{} In the previous computations, we never used the positivity of the inequality Lagrange multiplier. It is obvious that this condition is met if and only if :
+			$$
+				s_\mathcal{N} \geq 0
+			$$	
+			If it is indeed the case, the algorithm can terminate since we discovered an optimal triplet $(x,\lambda,s)$. If $\exists q\in\mathcal{N}$ such that 
+			$$
+				s_q < 0 
+			$$
+			$q$ is set to be the \emph{entering index} (and is a candidate for entering $\mathcal{B}$). 
+			
+			\paragraph{} The procedure for altering $\mathcal{B}$ and changing $x$ and $s$ can be described as follows : 
+			\vspace{10pt}
+			
+			\coolbox{white}{\textcolor{black}{Pivoting}}
+			{
+				\begin{itemize}
+					\item Allow $x_q$ to increase from 0 during next step
+					\item Fix all other component of $x_N$ to 0 and figure out the effect of increasing $x_q$ on the current basis vector $x_\mathcal{B}$, given that we wish to stay feasible with respect to the equality constraint $Ax=b$. 
+					\item Keep increasing $x_q$ until on of the component of $x_p$ of $\mathcal{B}$ is driven to $0$. 
+					\item Remove $p$ from $\mathcal{B}$ and replace it with $q$. 
+				\end{itemize}				
+			}
+			
+				\paragraph{} Let us formalize this process (known as \emph{pivoting}). Since both the iterate $x^+$ and the current $x$ should verify $Ax=b$ : 
+				$$
+					Bx_\mathcal{B}^+ +  A_qx_q^+ = Bx_\mathcal{B}
+				$$
+				and therefore 
+				$$
+					x_\mathcal{B}^+ = x_\mathcal{B} - B^{-1}A_qx_q^+
+				$$
+				The effect on the objective function is so that : 
+				$$
+					\begin{aligned}
+						c^Tx^+ &= c_\mathcal{B}^Tx_\mathcal{B}^+ +  c_qx_q^+ \\
+						  	    &= c_\mathcal{B}^Tx_\mathcal{B} - c_\mathcal{B}^TB^{-1}A_qx_q^+ +c_qx_q^+
+					\end{aligned}
+				$$
+				Also, since $c_\mathcal{B}^TB^{-1} = \lambda^T$ and since $q\in\mathcal{N}$, we have that 
+				$A^T_q\lambda = c_q - s_q $.
+				Finally : 
+				\begin{equation}
+					c^Tx^+ = c^Tx + s_qx_q^+ 
+					\label{eq::objdec}
+				\end{equation}
+				Given that $s_q<0$ (by definition), the \textbf{objective function is therefore \textcolor{red}{decreased}} after such an iteration. 
+			
+		}
+		\subsection{One-step}
+		{
+			\paragraph{} The summary of one step of the algorithm is detailed below. 
+			\vspace{10pt}
+			
+			\coolbox{white}{\textcolor{black}{Simplex - One-Step}}
+			{
+				\begin{itemize}
+					\item Given $\mathcal{B}, \, \mathcal{N}$, $x_\mathcal{B} = B^{-1}b$, $x_\mathcal{N}=0$ : 
+					\begin{itemize}[label=-]
+						\item Solve $B^T\lambda = c_\mathcal{B}$ for $\lambda$
+						\item Compute $s_\mathcal{N} = c_\mathcal{N} - N^T\lambda$
+					\end{itemize}
+					\item If $s_N\geq 0$  \textbf{stop}
+					\item Select $q\in\mathcal{N}$ with $s_q<0$ (entering index) 
+					\item Solve $Bd = A_q$ for $d$
+					\item If $d\leq 0$ \textbf{stop} (unbounded problem)
+					\item Compute 
+					\begin{equation}
+						x_q^+ = \min_{i\,\vert \, d_i>0}\frac{(x_\mathcal{B})_i}{d_i}
+					\end{equation}
+					with $i$ the arg-minimum. 
+					\item Update $x_\mathcal{B}^+ = x_\mathcal{B} - dx_q+ $
+					\item Change $\mathcal{B}$ by adding the index $q$ and removing $p$
+				\end{itemize}
+			}
+			
+		}
+		\subsection{Practical details}
+		{
+			\subsubsection{Selection of the entering index}
+			{
+				\paragraph{} There are usually several negative components of $s_N$ at each step. Question is : among them, how to choose the entering index, with the goal to minimize the number of steps to get to the optimum $x^*$. We therefore need to figure out a tradeoff between the search for that component and the actual decrease of the objective function. 
+				
+				
+				\paragraph{} Dantzig's original rule chooses $q$ such that $s_q$ is the most negative component of $s_\mathcal{N}$. This is clearly motivated by \eqref{eq::objdec} - however a large reduction of $c^Tx$ is not guaranteed. 
+				
+				\paragraph{} Many different policies exist - we might want to evaluate the contribution of  several indexes - at the cost of inverting $B$ which can be high-dimensional. Such a policy is known as a \emph{multiple pricing} strategy. 
+			}
+			\subsubsection{Starting the simplex method}
+			{
+				\paragraph{} The simplex requires a basic feasible point $x$ to start with - as well as it corresponding initial basis $\mathcal{B}$ - such that $B$ is non-singular, and $x_\mathcal{B} = B^{-1}b\geq 0$. Finding such a point is non-trivial, and we describe hereinafter a two-phase approach for finding this point. 
+				
+				\paragraph{} 
+				\sffamily
+				{
+				\begin{itemize}
+					\item[\textbf{Phase 1}] : Set-up an auxiliary linear program based on the data and solve it using the simplex method. Design it so that finding an initial basic feasible point is easy and so that its optimal point is a basic feasible point for the phase 2 program. 
+					\item[\textbf{Phase 2}] : Define a second linear problem, close to the original one, so that its solution can be used to extract one for \reflp. 
+				\end{itemize}	
+				
+				\rmfamily
+				\paragraph{} In phase 1, we can introduce an artificial variable $z$ and aim to solve : 
+				\begin{mini}|s|[2]
+					{z}{e^Tz}
+					{\label{eq::firstphase}}{}
+					\addConstraint{Ax+Ez}{ = b}
+					\addConstraint{x,z}{\geq 0}
+				\end{mini}
+				
+				where $e = \begin{pmatrix} 1 \hdots 1\end{pmatrix}^T$, and $E = diag(\text{sign}(b_j))$. Then we immediately have that 
+				$$
+					\begin{pmatrix} x \\z \end{pmatrix} = \begin{pmatrix} 0 \\ \vert b_j \vert _j\end{pmatrix}
+				$$
+				is a basic feasible point for \eqref{eq::firstphase}, with initial basis matrix given by $E$ (which obviously is non-singular). In this program, $z$ represent the degree of which the constraint $Ax=b$ is violated by the $x$ component. If the optimal solution of \eqref{eq::firstphase} is superior to $0$, then \reflp{} is unfeasible. 
+				
+				\paragraph{} Else, the optimal point provide a feasible point for a second linear program, which matches \reflp{} by a mock variable $z$ - we can therefore the optimal solution of \reflp{} extremely easily. 
+				
+				}
+				
+			}
+		}
+		\subsection{When to use the simplex ?}
+		{
+			\paragraph{} The simplex method belongs to a general class of algorithms for constrained optimization known as the \textbf{\textcolor{red}{active set method}}. It explicitly maintains estimates of the active and inactive index sets. 
+			
+			\paragraph{} Though highly efficient on almost all practical problem, the simplex has \textbf{exponential complexity}. The search for polynomial complexity recently led to intense research in the field of \emph{interior-point} methods.
+		} 
+	}
+\end{document}
