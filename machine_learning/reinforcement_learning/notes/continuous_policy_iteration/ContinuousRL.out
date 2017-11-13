@@ -1,0 +1,7 @@
+\BOOKMARK [1][-]{section.1}{Incremental methods}{}% 1
+\BOOKMARK [2][-]{subsection.1.1}{Monte-Carlo value approximation}{section.1}% 2
+\BOOKMARK [2][-]{subsection.1.2}{Temporal Difference value approximation}{section.1}% 3
+\BOOKMARK [2][-]{subsection.1.3}{Control and convergence}{section.1}% 4
+\BOOKMARK [1][-]{section.2}{Batch reinforcement learning}{}% 5
+\BOOKMARK [2][-]{subsection.2.1}{Experience replay}{section.2}% 6
+\BOOKMARK [2][-]{subsection.2.2}{Fixed targets}{section.2}% 7

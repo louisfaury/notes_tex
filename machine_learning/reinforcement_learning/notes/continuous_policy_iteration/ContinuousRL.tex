@@ -1,0 +1,186 @@
+%!TEX encoding = IsoLatin
+
+%% Document is article 
+\documentclass[a4paper]{article}
+
+%% ----------------------------------------------------- PACKAGES ----------------------------------------------------- %%
+\usepackage{coolArticle}
+\usepackage{tabularx}
+
+%% --------------------------------------------------- COMMANDS ----------------------------------------------------- %%
+\newcommand*\sq{\mathbin{\vcenter{\hbox{\rule{.7ex}{.7ex}}}}}
+\newcommand\red[1]
+{
+	\unskip \textcolor{red}{#1}\ignorespaces
+}
+\newcommand\vhat{\hat{V}(s,w)}
+\definecolor{lightblue}{rgb}{0.88,0.9,1}
+\definecolor{lightgray}{rgb}{0.95,0.95,0.95}
+
+%% ---------------------------------------------------- DOCUMENT ---------------------------------------------------- %%
+
+\begin{document}
+
+    \titlebox{0.6}{Reinforcement Learning}{Continuous Policy Iteration}
+    
+
+	\paragraph{} Tabular Reinforcement Learning provides a nice framework but doesn't scale for large environment (i.e $\mathcal{S}\gg1$) and doesn't provide solutions for real-worl problems where the data-space is continuous. 
+	
+	\paragraph{} How can we scale the methods that we saw for tabular MDPs to large or continuous state spaces ? One solution is to use \textcolor{red}{function approximators} to extrapolate knowledge from discrete, sampled data. Parametric approximation would lead us to estimate approximates of the value functions: 
+	\begin{equation}
+		\begin{aligned}
+			&\hat{V}(s,w) \simeq V_\pi(s) & &\forall s \in\mathcal{S}\\
+			&\hat{Q}(s,a,w) \simeq Q_\pi(s,a) & &\forall s,a \in\mathcal{S}\times\mathcal{A}
+		\end{aligned}
+	\end{equation}
+	The most commons parametric approximation are linear combination of engineered features:
+	\begin{equation}
+		\hat{V}(s,w) = w^T\phi(s)
+	\end{equation} 
+	and neural networks (or learned features). Unlike classical supervised learning, we will also focus on training methods that are suitable for non-stationary, non-i.i.d data (typically generated from environment-agent interactions). 
+	
+	\section{Incremental methods}
+	{
+		In online methods, we will consider gradient-descent like algorithms to estimate : 
+		\begin{equation}
+			w^* = \argmin{w}{J(w) = \frac{1}{2} \E[\pi]{\left(V_\pi(s)-\hat{V}(s,w)\right)^2}}
+		\end{equation}
+		and therefore updates will take the form:
+		\begin{equation}
+			\begin{aligned}
+				\Delta w &\propto -\grad[w]{J(w)}\\
+					      &= -\E[\pi]{\left(V_\pi(s)-\vhat\right)\grad[w]\vhat}
+			\end{aligned}
+		\end{equation}
+		Of course, because the sequential distribution under $\pi$ is unavailable, we proceed by SGD, sampling over trajectories:
+		\begin{equation}
+			\Delta w \propto \alpha\left(V_\pi(s)-\vhat)\right)\grad[w]{\vhat}
+			\label{eq::sgd_up}
+		\end{equation}
+		For a linear function approximator, this update writes : 
+		\begin{equation}
+			\delta w = \alpha\left(V_\pi(s)-\vhat)\right)\phi(s)
+		\end{equation}
+	
+	\rk{Of course, tabular features is a special of the linear function approximator: just pick $\phi(s) = \delta(s-s_i)$; and the weights to hold value for each state. }
+	
+	
+	\paragraph{} Since the correct value function $V_\pi(\cdot)$ is unavailable, we need to use proxy's for the update \eqref{eq::sgd_up}. As for the tabular case, we have several options (depending which expression of the expected return we want to approximate): 
+	\begin{equation}
+		\begin{aligned}
+			&V_\pi(s) & &= \E[\pi]{R_t\vert s_t=s} & & \\
+			& & & =\E[\pi]{\sum_{i=0}\gamma^i r_{t+1+i}} & & \gamma\in]0,1[ \\
+			& & & \simeq r_{t+1} + \gamma V_\pi(s_{t+1}) & &=R^{TD(0)}_t
+		\end{aligned}
+	\end{equation}
+	and adapt the update accordingly:
+	\begin{equation}
+		\Delta w \propto \alpha\left(G(s)-\vhat)\right)\grad[w]{\vhat}
+	\end{equation}
+	with $G(s) = R^{MC}(s), \, R^{TD}(s), \hdots$. 
+	
+		\subsection{Monte-Carlo value approximation}
+		{
+			\paragraph{} Because Monte-Carlo like updates writes:
+			\begin{equation}
+				R_t^{MC} = r_{t+1} + \gamma r_{t+2} + \hdots \gamma^T r_{T-t-1}
+			\end{equation}
+			it provides an unbiased estimator of $V_\pi(s=s_t)$, and MC evaluation converges toward a \textbf{local optimum}. This holds for both non-linear and linear function approximation. 
+		}
+		\subsection{Temporal Difference value approximation}
+		{
+			\paragraph{} The TD target writes:
+			\begin{equation}
+				R_t^{TD(0)} = r_{t+1} + \gamma \hat{V}^\pi(s=s_{t+1},w)
+			\end{equation}
+			and produce (because of bootstrapping) a \emph{biased} sample of the true value function approximation. 
+			We can however still apply our learning procedure, for instance on a linear function approximator:
+			\begin{equation}
+				\begin{aligned}
+					\Delta w &= \alpha\left( r_{t+1} + \hat{V}(s_{t+1},w) - \hat{V}(s_t)\right)\grad[w]{\hat{V}(s=s_t,w)}\\
+						      &= \alpha \delta_t^{TD}\phi(s_t)
+				\end{aligned}
+			\end{equation}
+			which was proved to converge to a local optimizer in the linear case. 
+			
+			\paragraph{} One could also use the $\lambda$-return as another biased sample of the true value function. The update will write, for $\lambda<1$:
+			\begin{equation}
+				\begin{aligned}
+					&\delta_t = r_{t+1} + \gamma \hat{V}(s_{t+1},w) - \hat{V}(s_t,w) \\
+					&e_t = \gamma \lambda e_{t-1} + \phi(s_t) \\
+					&\Delta w = \alpha \delta_t E_t
+				\end{aligned}
+			\end{equation}
+			the equivalent of the TD(0) backward view for the continuous case.
+		}
+		\subsection{Control and convergence}
+		{
+			\paragraph{} As for tabular MDPs, we alternate action-value function evaluation:
+				\begin{equation}
+					\hat{Q}(s,a,w) \simeq Q_\pi(s,a) \quad \forall s,a \in \mathcal{S}\times\mathcal{A}
+				\end{equation}
+				and policy improvement for control. 
+				
+			\paragraph{} It has been showed that MC, TD(0) and TD($\lambda$) converges for table look-up and linear function approximates when learning \emph{on-policy}. For non-linear function approximation, only MC methods were proven to converge on-policy. If learning \emph{off-policy}, there were proof of divergence for linear TD(0) and TD($\lambda$).
+		}
+	}
+	
+	\section{Batch reinforcement learning}
+	{
+		\paragraph{} Gradient-descent is simple but not sample efficient. Batch methods aim at correcting this behavior by finding the best fitting value function. Consider the experience $\mathcal{D}$ of <state,value> pairs:
+		\begin{equation}
+			\mathcal{D} := \left\{ \langle s_1,v_1^\pi\rangle, \hdots, \langle s_T,v_T^\pi\rangle\right\}
+		\end{equation} 
+		and we wish to minimize:
+		\begin{equation}
+			\sum_{t=1}^T \left( V_t^\pi - \hat{V}(s_t,w)\right)^2 = \E[\mathcal{D}]{\left(V_\pi(s) - \hat{V}(s,w)\right)^2}
+		\end{equation}
+		By repeating the procedure : 
+		\begin{enumerate}
+			\item Sample $\langle s,V_\pi(s)\rangle \sim \mathcal{D} $
+			\item Apply SGD update:
+			\begin{equation}
+				\Delta w = \alpha \left(V_\pi(s) - \hat{V}(s,w)\right)\grad[w]{\vhat}
+			\end{equation}
+		\end{enumerate}
+		we converge to a least-square solution. Of course, if $\hat{V}(\cdot,w)$ is linear in $w$, the least-square solution is analytically computed:
+		\begin{equation}
+			w_{LS}^* = \left( \sum_{t=1} \phi(s_t)\phi(s_t)^T\right)^{-1}\left(\sum_{t=1}^T V_\pi(s_t)\phi(s_t)\right)
+		\end{equation}
+		
+		\paragraph{} Again, because we don't know $V_\pi(\cdot)$, we use either unbiased or biases samples from the current policy. For instance, for \textcolor{red}{Least-Square TD(0)} (or LSTD), we choose the target return to be:
+		\begin{equation}
+			\delta_t = r_{t+1} + \gamma \hat{V}(s_{t+1},w)
+		\end{equation}
+		and therefore the least-square solution writes:
+		\begin{equation}
+			w_{LSTD}^* = \left( \sum_{t=0}^T \phi(s_t)\left( \phi(s_t) - \gamma \phi(s_{t+1})\right)\right)^{-1}\left( \sum{t=1}^T \phi(s_t)r_{t+1}\right)
+		\end{equation}
+		
+		\paragraph{} The same reasoning holds for control - i.e action value function approximation. However, when using policy iteration with off-policy learning, and non-linear approximators, learning used to be unstable and practitioners reported that converging required more advances techniques. Those techniques are \emph{experience replay} and \emph{target networks}. 
+		
+		\subsection{Experience replay}
+		{
+			\paragraph{} Let us store the transition of the form $(s_t,a_t,s_{t+1},r_{t+1})$ in a cyclic buffer, enabling an agent to sample from and train on previously observed data offline. This provides three main advantages: 
+			\begin{itemize}
+				\item reduce the amount of interactions needed with the environment.
+				\item reduce the variance of updates.
+				\item by sampling from a large memory, the temporal correlations that can adversely affect RL are broken.
+			\end{itemize}
+			While the first DQN algorithm used uniform sampling in that buffer, recent implementations have shown the superiority of prioritized sampling (w.r.t TD erros). 
+		}
+		
+		\subsection{Fixed targets}
+		{
+			\paragraph{} Instead of using the network we are currently optimizing to compute the target:
+			\begin{equation}
+				\delta_t = r + \gamma \max_{a'} Q(s_{t+1},a',w) - Q(s_t,a,w)
+			\end{equation}
+			we use a fixed network that gets updated more rarely, avoiding to use the fluctuating weights. Hence, with $w^-$ being old frozen parameters:
+			\begin{equation}
+				\delta_t = r + \gamma \max_{a}Q(s',a',w^-) - Q(s,a,w)
+			\end{equation}
+		}
+	}
+	
+\end{document}
